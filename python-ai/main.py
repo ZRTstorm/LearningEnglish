@@ -1,16 +1,8 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
+from app.api import basicRoot, audio_api
 
 app = FastAPI()
 
-class Item(BaseModel):
-    name: str
-    price: float
-
-@app.get("/")
-def read_root():
-    return {"message" : "Welcome to English BackPart"}
-
-@app.get("/items/{item_id}")
-def read_item(item_id: int, q: str = None):
-    return {"item_id": item_id, "q": q}
+app.include_router(basicRoot.router)
+app.include_router(audio_api.router, prefix="/audio", tags=["audio"])
