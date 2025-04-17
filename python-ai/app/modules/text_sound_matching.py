@@ -1,20 +1,25 @@
 from datetime import datetime
 import re
 
-def matching_sentence(subtitles: list[dict[str, str]], sentences: list[str]) -> list[dict[str, float]]:
-    # Step 1: 병합된 전체 자막 텍스트 및 단어 리스트 생성
+from app.schema.contents_response import TextTime
+
+
+def matching_sentence(subtitles: list[dict[str, str]], sentences: list[str]) -> list[TextTime]:
+    # All Subtitle Texts & Words List
     subtitle_texts = [s['text'].strip().replace('\n', ' ') for s in subtitles]
     full_text = " ".join(subtitle_texts)
     full_words = full_text.split()
 
-    # Step 2: 자막별 단어 범위와 시간 범위 기록
+    # Words Range & TimeStamp Range
     word_ranges = []
     word_cursor = 0
+
     for s in subtitles:
         words = s['text'].strip().replace('\n', ' ').split()
         word_count = len(words)
         start_sec = time_to_sec(s['start'])
         end_sec = time_to_sec(s['end'])
+
         word_ranges.append({
             "start_idx": word_cursor,
             "end_idx": word_cursor + word_count,
@@ -25,14 +30,14 @@ def matching_sentence(subtitles: list[dict[str, str]], sentences: list[str]) -> 
         })
         word_cursor += word_count
 
-    # Step 3: 문장을 전체 텍스트 기준으로 word 단위 인덱스로 찾기
-    aligned_results = []
+    # Searching per Words index
+    aligned_results: list[TextTime] = []
     word_index = 0
+
     for sentence in sentences:
         sentence_words = sentence.strip().split()
         sw_len = len(sentence_words)
 
-        # full_words 에서 문장 위치 탐색 (정확한 위치)
         for i in range(word_index, len(full_words) - sw_len + 1):
             if full_words[i:i + sw_len] == sentence_words:
                 sent_start_idx = i
@@ -40,20 +45,21 @@ def matching_sentence(subtitles: list[dict[str, str]], sentences: list[str]) -> 
                 word_index = sent_end_idx
                 break
         else:
-            continue  # 문장을 못 찾으면 스킵
+            continue
 
-        # Step 4: 문장의 단어 인덱스 범위를 타임스탬프로 매핑
+        # Sentence - TimeStamp Mapping
         sentence_start_time = None
         sentence_end_time = None
         accumulated = 0
+
         for wr in word_ranges:
-            # 문장 시작 시간 계산
+            # Sentence Start Time
             if wr["start_idx"] <= sent_start_idx < wr["end_idx"]:
                 offset = sent_start_idx - wr["start_idx"]
                 per_word = wr["duration"] / wr["word_count"] if wr["word_count"] else 0
                 sentence_start_time = wr["start_time"] + offset * per_word
 
-            # 문장 끝 시간 계산
+            # Sentence End Time
             if wr["start_idx"] < sent_end_idx <= wr["end_idx"]:
                 offset = sent_end_idx - wr["start_idx"]
                 per_word = wr["duration"] / wr["word_count"] if wr["word_count"] else 0
@@ -65,21 +71,13 @@ def matching_sentence(subtitles: list[dict[str, str]], sentences: list[str]) -> 
         if sentence_end_time is None:
             sentence_end_time = word_ranges[-1]["end_time"]
 
-        aligned_results.append({
-            "start": round(sentence_start_time, 3),
-            "end": round(sentence_end_time, 3),
-            "text": sentence
-        })
-
-    for i, item in enumerate(aligned_results, 1):
-        print(f"{i:02d} | {item['start']} ~ {item['end']} | {item['text']}")
+        aligned_results.append(TextTime(
+            start = round(sentence_start_time, 3),
+            end = round(sentence_end_time, 3),
+            text = sentence
+        ))
 
     return aligned_results
-
-def clean_and_split(text: str) -> list[str]:
-    # ' 는 유지하되, 나머지 구두점 제거
-    text = re.sub(r"[^\w'\s]", '', text)
-    return text.strip().split()
 
 def align_sentences_by_exact_words(subtitles: list[dict[str, str]], sentences: list[str]) -> list[dict[str, float]]:
     # 전체 자막 텍스트를 단어 기준으로 정리
@@ -136,3 +134,8 @@ def time_to_sec(t: str) -> float:
     except ValueError:
         dt = datetime.strptime(t, "%H:%M:%S")
     return dt.hour * 3600 + dt.minute * 60 + dt.second + dt.microsecond / 1e6
+
+
+def clean_and_split(text: str) -> list[str]:
+    text = re.sub(r"[^\w'\s]", '', text)
+    return text.strip().split()

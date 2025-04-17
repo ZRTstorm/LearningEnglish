@@ -21,7 +21,7 @@ def text_processing_basic(path: str):
     sentence_list = text_modify.sentence_classification_spacy(full_text)
 
     # Sentence - Sound TimeStamp Matching
-    text_sound_matching.matching_sentence(transcript, sentence_list)
+    return text_sound_matching.matching_sentence(transcript, sentence_list)
 
 def text_processing_music(path: str):
     # STT OpenAI Whisper

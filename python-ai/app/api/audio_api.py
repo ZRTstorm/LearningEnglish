@@ -1,8 +1,7 @@
 from fastapi import APIRouter, HTTPException
 from app.modules import audio_downloader
-from app.modules.sound_to_text import translate_audio
-from app.service.text_accuracy import text_accuracy
 from app.service import text_operating
+from app.service import contents_extract
 
 router = APIRouter()
 
@@ -27,5 +26,13 @@ def translate_text(path: str):
     try:
         text = text_operating.text_processing_music(path)
         return {"status": "success", "text": text}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+@router.get("/contents_basic")
+def contents_basic(url: str):
+    try:
+        contents = contents_extract.mani_contents(url)
+        return {"status": "success", "contents": contents}
     except Exception as e:
         return {"status": "error", "message": str(e)}

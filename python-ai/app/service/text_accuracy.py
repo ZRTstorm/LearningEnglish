@@ -1,5 +1,4 @@
 import jiwer
-from app.modules.sound_to_text import translate_audio
 from app.modules.sound_to_text import translate_audio_openai
 
 # Daylight Original Text
