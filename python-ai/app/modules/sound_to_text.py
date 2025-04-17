@@ -1,12 +1,5 @@
-import whisper
 import openai
 from app.modules.audio_downloader import subtitle_list_vtt
-
-# Local Whisper STT Model -> base.en ~ medium.en
-def translate_audio(file_path: str) -> str:
-    model = whisper.load_model("base.en")
-    result = model.transcribe(file_path)
-    return result["text"]
 
 # OpenAI API Key
 openai.api_key = (
