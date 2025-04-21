@@ -8,3 +8,4 @@ spacy==3.8.5
 torch==2.5.1
 webvtt_py==0.5.1
 yt_dlp==2025.3.31
+uvicorn==0.22.0

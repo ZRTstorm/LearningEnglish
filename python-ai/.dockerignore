@@ -4,6 +4,7 @@ __pycache__/
 
 # Venv Env
 venv/
+venv
 .env
 
 #Audio file
