@@ -38,6 +38,14 @@ def sound_segmentation(path: str):
     except Exception as e:
         return {"status": "error", "message": str(e)}
 
+@router.get("/grade_classification")
+def grade_classification(path: str):
+    try:
+        text_operating.grade_evaluation(path)
+        return {"status": "success"}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
 @router.get("/contents_all")
 def contents_all(url: str):
     try:
