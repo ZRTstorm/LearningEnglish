@@ -1,5 +1,6 @@
 from fastapi import APIRouter, HTTPException
 from app.modules import audio_downloader
+from app.modules import audio_segment
 from app.service import text_operating
 from app.service import contents_extract
 
@@ -26,6 +27,14 @@ def text_processing(path: str):
     try:
         text = text_operating.text_processing_basic(path)
         return {"status": "success", "contents": text}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+@router.get("/sound_segmentation")
+def sound_segmentation(path: str):
+    try:
+        audio_segment.vad_segment_silero(path)
+        return {"status": "success"}
     except Exception as e:
         return {"status": "error", "message": str(e)}
 
