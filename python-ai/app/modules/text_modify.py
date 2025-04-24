@@ -11,14 +11,14 @@ def sentence_classification_spacy(full_text: str):
 
     return [sent.text.strip() for sent in doc.sents]
 
-# Restore fullstop Punctuation
+# Restore fullstop Punctuation by PunctuationModel
 def punctuation_restore(full_text: str):
     model = PunctuationModel()
     result = model.restore_punctuation(full_text)
 
     return result
 
-# Sentence Splitter
+# Sentence Splitter for fullstop
 def sentence_spliter(full_text: str):
     base_sentences = re.split(r'(?<=[.!?])\s+', full_text.strip())
 
@@ -47,8 +47,18 @@ def sentence_spliter(full_text: str):
 
     return final_sentences
 
+# Paste Sentence by removing CRLF
+def paste_sentences(subtitles: list[dict[str, str]]) -> str:
+    result = []
+
+    for subtitle in subtitles:
+        text = subtitle["text"].strip().replace("\n", " ")
+        result.append(text)
+
+    return " ".join(result)
 
 # Remove Duplicate sentences in VTT Format
+# Few Alphabets are removed in function
 def duplicate_sentences(subtitles: list[dict[str, str]]) -> str:
     result = []
     prev_text = ""
@@ -64,15 +74,7 @@ def duplicate_sentences(subtitles: list[dict[str, str]]) -> str:
 
     return " ".join(result)
 
-def paste_sentences(subtitles: list[dict[str, str]]) -> str:
-    result = []
-
-    for subtitle in subtitles:
-        text = subtitle["text"].strip().replace("\n", " ")
-        result.append(text)
-
-    return " ".join(result)
-
+# Compare suffix with sentences
 def common_suffix(prev:str, curr:str) -> str:
     max_len = min(len(prev), len(curr))
 

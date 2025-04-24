@@ -1,5 +1,4 @@
 import os.path
-
 import yt_dlp
 import requests
 from io import StringIO
@@ -34,7 +33,6 @@ def downlaod_audio_mp3(url: str) -> str:
     output_path = os.path.join(save_dir, "%(title)s.%(ext)s")
 
     ydl_opts = {
-        "cookiefile": "./www.youtube.com_cookies.txt",
         "format": "bestaudio/best",
         "postprocessors": [{
             'key': 'FFmpegExtractAudio',

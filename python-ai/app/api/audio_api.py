@@ -5,7 +5,7 @@ from app.service import contents_extract
 
 router = APIRouter()
 
-@router.post("/extract_audio")
+@router.get("/extract_audio")
 def extract_audio(url: str):
     try:
         output_file = audio_downloader.downlaod_audio_mp3(url)
@@ -16,23 +16,23 @@ def extract_audio(url: str):
 @router.get("/extract_subtitles")
 def extract_subtitles(url: str):
     try:
-        text_operating.text_manipulate(url)
-        return {"status": "success"}
+        subtitles = text_operating.exist_subtitle(url)
+        return {"status": "success", "subtitles": subtitles}
     except Exception as e:
         return {"status": "error", "message": str(e)}
 
-@router.get("/translate")
-def translate_text(path: str):
+@router.get("/text_processing")
+def text_processing(path: str):
     try:
-        text = text_operating.text_processing_music(path)
-        return {"status": "success", "text": text}
+        text = text_operating.text_processing_basic(path)
+        return {"status": "success", "contents": text}
     except Exception as e:
         return {"status": "error", "message": str(e)}
 
-@router.get("/contents_basic")
-def contents_basic(url: str):
+@router.get("/contents_all")
+def contents_all(url: str):
     try:
-        contents = contents_extract.mani_contents(url)
+        contents = contents_extract.contents_all_operation(url)
         return {"status": "success", "contents": contents}
     except Exception as e:
         return {"status": "error", "message": str(e)}

@@ -23,10 +23,21 @@ def translate_audio_openai(file_path: str) -> list[dict[str, str]]:
     subtitles = subtitle_list_vtt(transript)
     remove_hallucination(subtitles)
 
-    for subtitle in subtitles:
-        print(f"{subtitle['start']} -- {subtitle['end']}: {subtitle['text']}")
-
     return subtitles
+
+# OpenAI Whisper API to text (test)
+def translate_audio_openai_text(file_path: str) -> str:
+    with open(file_path, "rb") as audio_file:
+        client = openai.OpenAI(api_key=openai.api_key)
+
+        transript = client.audio.transcriptions.create(
+            model="whisper-1",
+            file=audio_file,
+            language="en",
+            response_format="text"
+        )
+
+    return transript
 
 # Hallucination ending PostProcessing
 def remove_hallucination(subtitles: list[dict[str, str]]) -> list[dict[str, str]]:

@@ -1,5 +1,4 @@
 from fastapi import FastAPI
-from pydantic import BaseModel
 from app.api import basicRoot, audio_api
 
 app = FastAPI()

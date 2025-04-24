@@ -1,9 +1,8 @@
 from datetime import datetime
 import re
-
 from app.schema.contents_response import TextTime
 
-
+# (Sentence , Timestamp) Matching
 def matching_sentence(subtitles: list[dict[str, str]], sentences: list[str]) -> list[TextTime]:
     # All Subtitle Texts & Words List
     subtitle_texts = [s['text'].strip().replace('\n', ' ') for s in subtitles]
@@ -79,54 +78,55 @@ def matching_sentence(subtitles: list[dict[str, str]], sentences: list[str]) -> 
 
     return aligned_results
 
-def align_sentences_by_exact_words(subtitles: list[dict[str, str]], sentences: list[str]) -> list[dict[str, float]]:
-    # 전체 자막 텍스트를 단어 기준으로 정리
+# (Sentence , Timestamp) Matching by words
+def matching_sentence_words(subtitles: list[dict[str, str]], sentences: list[str]) -> list[TextTime]:
     subtitle_words = []
     word_time_map = []
+
     for s in subtitles:
         start_sec = time_to_sec(s['start'])
         end_sec = time_to_sec(s['end'])
         words = clean_and_split(s['text'])
         duration = end_sec - start_sec
+
         if not words:
             continue
         per_word_time = duration / len(words)
+
         for i, word in enumerate(words):
             timestamp = start_sec + i * per_word_time
             subtitle_words.append(word)
             word_time_map.append(timestamp)
 
-    results = []
     word_index = 0
+    aligned_results: list[TextTime] = []
 
     for sentence in sentences:
         words = clean_and_split(sentence)
         n = len(words)
 
-        # 정확히 일치하는 위치 탐색
         found = False
         for i in range(word_index, len(subtitle_words) - n + 1):
             if subtitle_words[i:i+n] == words:
                 start_time = word_time_map[i]
                 end_time = word_time_map[i + n - 1] + (
                     word_time_map[i + n - 1] - word_time_map[i + n - 2] if n > 1 else 0.5)
-                results.append({
-                    "start": round(start_time, 3),
-                    "end": round(end_time, 3),
-                    "text": sentence
-                })
-                word_index = i + n  # 다음 검색 시작 위치 이동
+
+                aligned_results.append(TextTime(
+                    start = round(start_time, 3),
+                    end = round(end_time, 3),
+                    text = sentence
+                ))
+                word_index = i + n
                 found = True
                 break
 
         if not found:
-            print(f" 문장 매칭 실패: {sentence}")
+            print(f" Failure to Sentence matching : {sentence}")
 
-    for i, item in enumerate(results, 1):
-        print(f"{i:02d} | {item['start']} ~ {item['end']} | {item['text']}")
+    return aligned_results
 
-    return results
-
+# Timestamp to Second
 def time_to_sec(t: str) -> float:
     # Convert timestamp 'HH:MM:SS.sss' to Second as Float
     try:
@@ -135,7 +135,7 @@ def time_to_sec(t: str) -> float:
         dt = datetime.strptime(t, "%H:%M:%S")
     return dt.hour * 3600 + dt.minute * 60 + dt.second + dt.microsecond / 1e6
 
-
+# Text split to words
 def clean_and_split(text: str) -> list[str]:
     text = re.sub(r"[^\w'\s]", '', text)
     return text.strip().split()
