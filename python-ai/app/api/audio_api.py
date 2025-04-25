@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException
 from app.modules import audio_downloader
 from app.modules import audio_segment
-from app.modules import voice_grade
+from app.modules import text_to_speech
 from app.service import text_operating
 from app.service import contents_extract
 
@@ -51,6 +51,14 @@ def grade_classification(path: str):
 def sound_grade(path: str):
     try:
         text_operating.grade_operating(path)
+        return {"status": "success"}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+@router.get("/text_to_speech")
+def tts_api(text: str):
+    try:
+        text_to_speech.tts_google(text)
         return {"status": "success"}
     except Exception as e:
         return {"status": "error", "message": str(e)}
