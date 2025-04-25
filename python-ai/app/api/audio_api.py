@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException
 from app.modules import audio_downloader
 from app.modules import audio_segment
+from app.modules import voice_grade
 from app.service import text_operating
 from app.service import contents_extract
 
@@ -42,6 +43,14 @@ def sound_segmentation(path: str):
 def grade_classification(path: str):
     try:
         text_operating.grade_evaluation(path)
+        return {"status": "success"}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+@router.get("/sound_grade")
+def sound_grade(path: str):
+    try:
+        text_operating.grade_operating(path)
         return {"status": "success"}
     except Exception as e:
         return {"status": "error", "message": str(e)}

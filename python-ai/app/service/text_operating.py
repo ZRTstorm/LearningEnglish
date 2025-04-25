@@ -4,6 +4,7 @@ from app.modules import text_modify
 from app.modules import text_sound_matching
 from app.modules import audio_segment
 from app.modules import grade_classification
+from app.modules import voice_grade
 from app.schema.contents_response import BasicResponse
 
 # Extracting exist subtitle
@@ -87,3 +88,31 @@ def grade_evaluation(path: str):
     for i, (chunk, score) in enumerate(details):
         print(f"[Chunk {i+1}] Grade: {round(score, 2)}")
         print(f"{chunk[:100]}...\n")
+
+def grade_operating(path: str):
+    # STT OpenAI Whisper
+    transcript = sound_to_text.translate_audio_openai(path)
+
+    # Duplicate Sentence Cleaning
+    full_text = text_modify.paste_sentences(transcript)
+
+    # Sentence Classification
+    sentence_list = text_modify.sentence_classification_spacy(full_text)
+
+    # Sentence - Sound TimeStamp Matching
+    matching_list = text_sound_matching.matching_sentence(transcript, sentence_list)
+
+    # Audio voice Segmentation
+    voice_list = audio_segment.vad_segment_silero(path)
+
+    # Voice - Sentence Mathcing
+    audio_segment.correct_sentence_segments(matching_list, voice_list)
+
+    # Text grade evaluation
+    score, details = grade_classification.readability_evaluation(matching_list)
+
+    # voice grade evaluation
+    sound_score = voice_grade.sound_scoring(path, matching_list)
+
+    print("Text Score: ", score)
+    print("\nSound Score: ", sound_score)
