@@ -8,3 +8,7 @@ class TextTime(BaseModel):
 class BasicResponse(BaseModel):
     file_path: str
     text: list[TextTime]
+
+class TTSResponse(BaseModel):
+    grade: float
+    contents: list[BasicResponse]
