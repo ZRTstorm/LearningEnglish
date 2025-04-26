@@ -68,7 +68,7 @@ def text_processing_music(path: str):
 
     return BasicResponse(file_path=path, text=matching_list)
 
-def grade_evaluation(path: str):
+def text_grading(path: str):
     # STT OpenAI Whisper
     transcript = sound_to_text.translate_audio_openai(path)
 
@@ -81,15 +81,13 @@ def grade_evaluation(path: str):
     # Sentence - Sound TimeStamp Matching
     matching_list = text_sound_matching.matching_sentence(transcript, sentence_list)
 
-    # grade Evaluation
+    # Text grade evaluation
     score, details = grade_classification.readability_evaluation(matching_list)
 
-    print("Overall score: ", score)
-    for i, (chunk, score) in enumerate(details):
-        print(f"[Chunk {i+1}] Grade: {round(score, 2)}")
-        print(f"{chunk[:100]}...\n")
+    print("Text Score: ", score)
+    return score, details
 
-def grade_operating(path: str):
+def sound_grading(path: str):
     # STT OpenAI Whisper
     transcript = sound_to_text.translate_audio_openai(path)
 
@@ -108,11 +106,7 @@ def grade_operating(path: str):
     # Voice - Sentence Mathcing
     audio_segment.correct_sentence_segments(matching_list, voice_list)
 
-    # Text grade evaluation
-    score, details = grade_classification.readability_evaluation(matching_list)
-
-    # voice grade evaluation
+    # sound grade classification
     sound_score = voice_grade.sound_scoring(path, matching_list)
 
-    print("Text Score: ", score)
-    print("\nSound Score: ", sound_score)
+    return sound_score

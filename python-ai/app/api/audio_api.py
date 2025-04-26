@@ -1,9 +1,8 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter
 from app.modules import audio_downloader
 from app.modules import audio_segment
 from app.service import ocr_operating
 from app.service import text_operating
-from app.service import contents_extract
 from app.service import text_translating
 
 router = APIRouter()
@@ -24,35 +23,28 @@ def extract_subtitles(url: str):
     except Exception as e:
         return {"status": "error", "message": str(e)}
 
-@router.get("/text_processing")
-def text_processing(path: str):
-    try:
-        text = text_operating.text_processing_basic(path)
-        return {"status": "success", "contents": text}
-    except Exception as e:
-        return {"status": "error", "message": str(e)}
-
 @router.get("/sound_segmentation")
 def sound_segmentation(path: str):
     try:
-        audio_segment.vad_segment_silero(path)
-        return {"status": "success"}
+        segment_stamp = audio_segment.vad_segment_silero(path)
+        return {"status": "success", "stamp": segment_stamp}
     except Exception as e:
         return {"status": "error", "message": str(e)}
 
-@router.get("/grade_classification")
-def grade_classification(path: str):
+@router.get("/text_grade")
+def text_grade_classification(path: str):
     try:
-        text_operating.grade_evaluation(path)
-        return {"status": "success"}
+        score, details = text_operating.text_grading(path)
+        scores = [score for _, score in details]
+        return {"status": "success", "overall_score": score, "scores": scores}
     except Exception as e:
         return {"status": "error", "message": str(e)}
 
 @router.get("/sound_grade")
 def sound_grade(path: str):
     try:
-        text_operating.grade_operating(path)
-        return {"status": "success"}
+        grade = text_operating.text_grading(path)
+        return {"status": "success", "sound_score": grade}
     except Exception as e:
         return {"status": "error", "message": str(e)}
 
@@ -67,15 +59,7 @@ def tts_api(text: str, file_name: str):
 @router.get("/text_translation")
 def translate_text(path: str):
     try:
-        text_translating.translate_operate(path)
-        return {"status": "success"}
-    except Exception as e:
-        return {"status": "error", "message": str(e)}
-
-@router.get("/contents_all")
-def contents_all(url: str):
-    try:
-        contents = contents_extract.contents_all_operation(url)
-        return {"status": "success", "contents": contents}
+        translated = text_translating.translate_operate(path)
+        return {"status": "success", "translated": translated}
     except Exception as e:
         return {"status": "error", "message": str(e)}

@@ -44,7 +44,7 @@ def remove_hallucination(subtitles: list[dict[str, str]]) -> list[dict[str, str]
     hallucination = [
         "thank you", "for watching", "like and subscribe",
         "see you next", "sponsored by", "check out", "link in the description",
-        "transcript", "description", "i hope you", "i'll see you"
+        "transcript", "description", "i hope you", "i'll see you", "APPLAUSE"
     ]
 
     if not subtitles:

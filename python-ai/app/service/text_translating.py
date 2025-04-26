@@ -26,3 +26,5 @@ def translate_operate(path: str):
 
     for idx, sentence in enumerate(translated):
         print(f"{idx + 1}: {sentence}")
+
+    return translated
