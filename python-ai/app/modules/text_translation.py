@@ -47,6 +47,7 @@ def papago_translate(text:str, source: str="en", target: str="ko") -> str:
         "source": source,
         "target": target,
         "text": text,
+        "honorific": "true"
     }
 
     response = requests.post(url, headers=headers, data=data)

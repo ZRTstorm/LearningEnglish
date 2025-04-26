@@ -65,9 +65,9 @@ def tts_api(text: str, file_name: str):
         return {"status": "error", "message": str(e)}
 
 @router.get("/text_translation")
-def translate_text():
+def translate_text(path: str):
     try:
-        text_translating.translate_test()
+        text_translating.translate_operate(path)
         return {"status": "success"}
     except Exception as e:
         return {"status": "error", "message": str(e)}
