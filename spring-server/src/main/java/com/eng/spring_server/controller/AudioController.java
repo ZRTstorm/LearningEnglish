@@ -1,5 +1,6 @@
-package com.eng.spring_server;
+package com.eng.spring_server.controller;
 
+import com.eng.spring_server.client.PythonApiClient;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import org.springframework.http.ResponseEntity;

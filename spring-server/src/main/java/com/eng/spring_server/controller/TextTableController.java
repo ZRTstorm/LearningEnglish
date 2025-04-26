@@ -1,6 +1,7 @@
-package com.eng.spring_server;
+package com.eng.spring_server.controller;
 
 
+import com.eng.spring_server.domain.TextTableRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;

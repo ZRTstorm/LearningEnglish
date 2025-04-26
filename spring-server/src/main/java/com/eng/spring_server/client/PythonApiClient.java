@@ -1,4 +1,4 @@
-package com.eng.spring_server;
+package com.eng.spring_server.client;
 
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.stereotype.Service;

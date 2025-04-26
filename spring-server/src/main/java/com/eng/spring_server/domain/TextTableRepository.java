@@ -1,4 +1,4 @@
-package com.eng.spring_server;
+package com.eng.spring_server.domain;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
