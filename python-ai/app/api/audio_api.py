@@ -4,6 +4,7 @@ from app.modules import audio_segment
 from app.service import ocr_operating
 from app.service import text_operating
 from app.service import contents_extract
+from app.service import text_translating
 
 router = APIRouter()
 
@@ -60,6 +61,14 @@ def tts_api(text: str, file_name: str):
     try:
         result = ocr_operating.ocr_text_executing(text, file_name)
         return {"status": "success", "item": result}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+@router.get("/text_translation")
+def translate_text():
+    try:
+        text_translating.translate_test()
+        return {"status": "success"}
     except Exception as e:
         return {"status": "error", "message": str(e)}
 
