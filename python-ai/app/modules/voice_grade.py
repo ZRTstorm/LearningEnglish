@@ -25,10 +25,10 @@ def sound_scoring(path:str, sentences:list[TextTime]):
 
     # Pitch
     pitch = estimate_pitch(path)
-    if pitch >= 0.95: pitch = 1.0
-    elif pitch >= 0.9: pitch = 0.8
-    elif pitch >= 0.8: pitch = 0.6
-    elif pitch >= 0.6: pitch = 0.4
+    if pitch >= 0.8: pitch = 1.0
+    elif pitch >= 0.6: pitch = 0.8
+    elif pitch >= 0.4: pitch = 0.6
+    elif pitch >= 0.2: pitch = 0.4
     else: pitch = 0.2
 
     final_score = round(0.6 * wpm + 0.2 * ratio + 0.2 * pitch, 2)
@@ -94,13 +94,19 @@ def estimate_pitch(path: str, sr=16000):
     pitch_range = np.max(f0_clean) - np.min(f0_clean)
 
     # pitch Scoring
-    max_std = 40.0
-    max_range = 500.0
+    opt_std = 30.0
+    opt_range = 300.0
 
-    norm_std = min(pitch_std / max_std, 1.0)
-    norm_range = min(pitch_range / max_range, 1.0)
+    std_diff = abs(pitch_std - opt_std)
+    range_diff = abs(pitch_range - opt_range)
 
-    score = round(0.7 * norm_std + 0.3 * norm_range, 2)
-    print(score)
+    std_score = smooth_score(std_diff, 20)
+    range_score = smooth_score(range_diff, 150)
+
+    score = round((0.7 * std_score) + (0.3 * range_score), 2)
+    print(f"pitch_std: {pitch_std:.2f}, pitch_range: {pitch_range:.2f}, score: {score}")
 
     return score
+
+def smooth_score(diff, scale):
+    return 1 / (1 + (diff/scale))

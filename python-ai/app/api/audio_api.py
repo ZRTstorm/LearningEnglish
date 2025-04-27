@@ -43,7 +43,7 @@ def text_grade_classification(path: str):
 @router.get("/sound_grade")
 def sound_grade(path: str):
     try:
-        grade = text_operating.text_grading(path)
+        grade = text_operating.sound_grading(path)
         return {"status": "success", "sound_score": grade}
     except Exception as e:
         return {"status": "error", "message": str(e)}
