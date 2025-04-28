@@ -1,18 +1,18 @@
 import os.path
-
 import yt_dlp
 import requests
 from io import StringIO
 import webvtt
 
+# Download Audio file for WAV Format
 def download_audio(url: str) -> str:
     save_dir = "downloads"
     output_path = os.path.join(save_dir, "%(title)s.%(ext)s")
 
     ydl_opts = {
         "format": "bestaudio/best",
-        'extractaudio' : True,
-        'audioformat' : 'wav',
+        'extractaudio': True,
+        'audioformat': 'wav',
         'outtmpl': output_path,
         'postprocessors': [{
             'key': 'FFmpegExtractAudio',
@@ -27,6 +27,7 @@ def download_audio(url: str) -> str:
 
     return file_path
 
+# Download Audio file for MP3 Format
 def downlaod_audio_mp3(url: str) -> str:
     save_dir = "downloads"
     output_path = os.path.join(save_dir, "%(title)s.%(ext)s")
@@ -47,24 +48,11 @@ def downlaod_audio_mp3(url: str) -> str:
 
     return file_path
 
-def subtitle_list_vtt(vtt_text: str):
-    buffer = StringIO(vtt_text)
-    subtitles = []
-
-    for caption in webvtt.read_buffer(buffer).captions:
-        subtitles.append({
-            "start": caption.start,
-            "end": caption.end,
-            "text": caption.text.strip()
-        })
-    return subtitles
-
+# Download Subtitle from
 def download_subtitles(url: str):
-
     ydl_opts = {
         'skip_download': True,
         'writesubtitles': True,
-        'writeautomaticsub': True,
         'subtitleslangs': ['en'],
         "subtitlesformat": "vtt",
     }
@@ -83,24 +71,29 @@ def download_subtitles(url: str):
                 break
 
         if not subtitle_url:
-            for fmt in auto_subs.get("en", []):
-                if fmt["ext"] == "vtt":
-                    subtitle_url = fmt["url"]
-                    print("Automatic subtitle is in YouTube")
-                    break
-
-        if not subtitle_url:
-            print("No subtitles found")
+            print("Subtitle is not in Media : ", url)
             return
 
         response = requests.get(subtitle_url)
         vtt_text = response.text
 
         if not vtt_text.strip().startswith("WEBVTT"):
-            print("Subtitle is not Correct vtt format")
+            print("Subtitle is not Correct VTT Format")
             return
 
         subtitles = subtitle_list_vtt(vtt_text)
 
-        for subtitle in subtitles:
-            print(f"{subtitle['start']} -- {subtitle['end']}: {subtitle['text']}")
+        return subtitles
+
+# VTT Format Parsing -> Dict : start , end , text
+def subtitle_list_vtt(vtt_text: str):
+    buffer = StringIO(vtt_text)
+    subtitles = []
+
+    for caption in webvtt.read_buffer(buffer).captions:
+        subtitles.append({
+            "start": caption.start,
+            "end": caption.end,
+            "text": caption.text.strip()
+        })
+    return subtitles

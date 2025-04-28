@@ -1,0 +1,22 @@
+from app.modules import text_to_speech
+from app.modules import text_modify
+from app.modules import grade_classification
+from app.schema.contents_response import TTSResponse
+
+def ocr_text_executing(text: str, file_name: str):
+    # full_text -> sentence list
+    sentences = text_modify.sentence_classification_spacy(text)
+
+    # tts operation
+    # US , GB , AU voice List
+    tts_list = text_to_speech.tts_google(sentences, file_name)
+
+    # Text Grade evaluation
+    text_grade = grade_classification.readability_evaluation(tts_list[0].text)
+
+    result = TTSResponse(
+        grade = text_grade,
+        contents = tts_list
+    )
+    return result
+

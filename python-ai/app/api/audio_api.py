@@ -1,11 +1,13 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter
 from app.modules import audio_downloader
-from app.modules.sound_to_text import translate_audio
-from app.service.text_accuracy import text_accuracy
+from app.modules import audio_segment
+from app.service import ocr_operating
+from app.service import text_operating
+from app.service import text_translating
 
 router = APIRouter()
 
-@router.post("/extract_audio")
+@router.get("/extract_audio")
 def extract_audio(url: str):
     try:
         output_file = audio_downloader.downlaod_audio_mp3(url)
@@ -16,15 +18,64 @@ def extract_audio(url: str):
 @router.get("/extract_subtitles")
 def extract_subtitles(url: str):
     try:
-        audio_downloader.download_subtitles(url)
+        subtitles = text_operating.exist_subtitle(url)
+        return {"status": "success", "subtitles": subtitles}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+@router.get("/sound_segmentation")
+def sound_segmentation(path: str):
+    try:
+        segment_stamp = audio_segment.vad_segment_silero(path)
+        return {"status": "success", "stamp": segment_stamp}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+@router.get("/text_grade")
+def text_grade_classification(path: str):
+    try:
+        score, details = text_operating.text_grading(path)
+        scores = [score for _, score in details]
+        return {"status": "success", "overall_score": score, "scores": scores}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+@router.get("/sound_grade")
+def sound_grade(path: str):
+    try:
+        grade = text_operating.sound_grading(path)
+        return {"status": "success", "sound_score": grade}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+@router.get("/text_to_speech")
+def tts_api(text: str, file_name: str):
+    try:
+        result = ocr_operating.ocr_text_executing(text, file_name)
+        return {"status": "success", "item": result}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+@router.get("/text_translation")
+def translate_text(path: str):
+    try:
+        translated = text_translating.translate_operate(path)
+        return {"status": "success", "translated": translated}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+@router.get("/text_ranked")
+def rank_text(path: str):
+    try:
+        text_operating.sentence_ranking(path)
         return {"status": "success"}
     except Exception as e:
         return {"status": "error", "message": str(e)}
 
-@router.get("/translate")
-def translate_text(path: str):
+@router.get("/text_summarization")
+def summarize_text(path: str):
     try:
-        text = text_accuracy(path)
-        return {"status": "success", "text": text}
+        text_operating.text_summarization(path)
+        return {"status": "success"}
     except Exception as e:
         return {"status": "error", "message": str(e)}

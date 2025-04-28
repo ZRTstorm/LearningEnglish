@@ -1,6 +1,5 @@
 import jiwer
-from app.modules.sound_to_text import translate_audio
-from app.modules.sound_to_text import translate_audio_openai
+from app.modules.sound_to_text import translate_audio_openai_text
 
 # Daylight Original Text
 daylight_text = (
@@ -116,11 +115,15 @@ transform = jiwer.Compose([
     jiwer.RemoveEmptyStrings()
 ])
 
-def text_accuracy(path: str) -> str:
-    text = translate_audio_openai(path)
+# Compare text accuracy by WER rate
+# 0.00 ~ 0.10 Error rate
+def text_accuracy(path: str) -> float:
+    text = translate_audio_openai_text(path)
 
     original_text = transform(daylight_text)
     replaced_text = transform(text)
 
-    print("WER: ", jiwer.wer(original_text, replaced_text))
-    return text
+    accuracy = jiwer.wer(original_text, replaced_text)
+    print("WER: ", accuracy)
+
+    return accuracy

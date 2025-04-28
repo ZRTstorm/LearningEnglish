@@ -1,0 +1,11 @@
+deepmultilingualpunctuation==1.0.1
+fastapi==0.115.12
+jiwer==3.1.0
+openai==1.75.0
+pydantic==1.10.8
+Requests==2.32.3
+spacy==3.8.5
+torch==2.5.1
+webvtt_py==0.5.1
+yt_dlp==2025.3.31
+uvicorn==0.22.0
