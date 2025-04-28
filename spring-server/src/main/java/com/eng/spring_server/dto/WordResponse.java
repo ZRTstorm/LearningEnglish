@@ -6,6 +6,8 @@ import lombok.Getter;
 @Getter
 public class WordResponse {
 
+
+    //
     private Long id;
     private String word;
     private String meaning;

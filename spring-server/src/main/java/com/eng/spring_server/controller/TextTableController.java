@@ -6,15 +6,16 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RestController;
 
-@Controller
+@RestController
 @RequiredArgsConstructor
 public class TextTableController {
 
     private final TextTableRepository textTableRepository;
 
 
-    @GetMapping("text")
+    @GetMapping("/text")
     String text(Model model){
         textTableRepository.findAll();
         return "hello";
