@@ -5,6 +5,7 @@ from app.modules import text_sound_matching
 from app.modules import audio_segment
 from app.modules import grade_classification
 from app.modules import voice_grade
+from app.modules import sentence_rank
 from app.schema.contents_response import BasicResponse
 
 # Extracting exist subtitle
@@ -110,3 +111,22 @@ def sound_grading(path: str):
     sound_score = voice_grade.sound_scoring(path, matching_list)
 
     return sound_score
+
+def sentence_ranking(path: str):
+    transcript = sound_to_text.translate_audio_openai(path)
+
+    # Duplicate Sentence Cleaning
+    full_text = text_modify.paste_sentences(transcript)
+
+    # Sentence Classification
+    sentence_list = text_modify.sentence_classification_spacy(full_text)
+
+    sentence_rank.text_rank_tf(sentence_list)
+
+def text_summarization(path: str):
+    transcript = sound_to_text.translate_audio_openai(path)
+
+    # Duplicate Sentence Cleaning
+    full_text = text_modify.paste_sentences(transcript)
+
+    sentence_rank.text_summa(full_text)

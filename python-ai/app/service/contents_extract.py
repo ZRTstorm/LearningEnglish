@@ -6,6 +6,7 @@ from app.modules import audio_segment
 from app.modules import grade_classification
 from app.modules import voice_grade
 from app.modules import text_translation
+from app.modules import sentence_rank
 from app.service import ocr_operating
 from app.schema.contents_response import BasicResponse, AllContentsResponse, OcrContentsResponse
 
@@ -71,3 +72,13 @@ def ocr_all_operation(text: str, name: str):
                                    file_text=exec_result.contents,
                                    translated=translated)
     return response
+
+def sentence_rank_operation(sentences: list[str]):
+    results = sentence_rank.text_rank_tf(sentences)
+
+    return results
+
+def text_summarize_operation(sentences: list[str]):
+    summarize = sentence_rank.text_summarize(sentences)
+
+    return summarize

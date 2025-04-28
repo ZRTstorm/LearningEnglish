@@ -63,3 +63,19 @@ def translate_text(path: str):
         return {"status": "success", "translated": translated}
     except Exception as e:
         return {"status": "error", "message": str(e)}
+
+@router.get("/text_ranked")
+def rank_text(path: str):
+    try:
+        text_operating.sentence_ranking(path)
+        return {"status": "success"}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+@router.get("/text_summarization")
+def summarize_text(path: str):
+    try:
+        text_operating.text_summarization(path)
+        return {"status": "success"}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}

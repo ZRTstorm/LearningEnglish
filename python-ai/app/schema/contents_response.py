@@ -24,3 +24,7 @@ class OcrContentsResponse(BaseModel):
     text_grade: float
     file_text: list[BasicResponse]
     translated: list[str]
+
+class TextRankResponse(BaseModel):
+    index: int
+    sentence: str
