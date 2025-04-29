@@ -6,8 +6,11 @@ import com.eng.spring_server.domain.contents.AllContentsRepository;
 import com.eng.spring_server.domain.contents.TextTime;
 import com.eng.spring_server.dto.AllContentsResponse;
 import com.eng.spring_server.dto.AudioRequest;
+import com.eng.spring_server.util.YoutubeUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -17,28 +20,35 @@ public class AllContentsService {
     private final AllContentsRepository allContentsRepository;
 
     public Long processAudioContents(AudioRequest request) {
-        // Python 서버에 요청 보내고 결과 받기
+        String videoKey = YoutubeUtil.extractYoutubeVideoId(request.getUrl());
+
+        // 1. 이미 처리된 영상이 있는지 확인
+        Optional<AllContents> existing = allContentsRepository.findByVideoKey(videoKey);
+        if (existing.isPresent()) {
+            return existing.get().getId();
+        }
+
+        // 2. 없으면 Python 서버로 요청
         AllContentsResponse response = pythonApiClient.requestAudioContents(request.getUrl());
 
-        // DB에 저장할 객체 만들기
         AllContents allContents = new AllContents();
+        allContents.setVideoKey(videoKey); // 저장!
         allContents.setFilePath(response.getFile_path());
         allContents.setTextGrade(response.getText_grade());
         allContents.setSoundGrade(response.getSound_grade());
 
         for (var textItem : response.getText()) {
-            TextTime textTime = new TextTime();
-            textTime.setStartTime(textItem.getStart());
-            textTime.setEndTime(textItem.getEnd());
-            textTime.setText(textItem.getText());
-            textTime.setAllContents(allContents);
-
-            allContents.getTextTimes().add(textTime);
+            TextTime t = new TextTime();
+            t.setStartTime(textItem.getStart());
+            t.setEndTime(textItem.getEnd());
+            t.setText(textItem.getText());
+            t.setAllContents(allContents);
+            allContents.getTextTimes().add(t);
         }
 
-        // 저장하고 id 반환
         return allContentsRepository.save(allContents).getId();
     }
+
 
 
     public AllContents getAudioContents(Long id) {

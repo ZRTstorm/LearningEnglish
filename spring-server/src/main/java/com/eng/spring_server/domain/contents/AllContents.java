@@ -14,12 +14,16 @@ import java.util.List;
 @NoArgsConstructor
 public class AllContents {
 
-    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     private String filePath;
     private float textGrade;
     private float soundGrade;
+
+    @Column(unique = true) // 유튜브 영상 중복 방지
+    private String videoKey;
 
     @OneToMany(mappedBy = "allContents", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<TextTime> textTimes = new ArrayList<>();
