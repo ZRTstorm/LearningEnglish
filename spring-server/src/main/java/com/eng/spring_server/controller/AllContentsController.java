@@ -1,6 +1,7 @@
 package com.eng.spring_server.controller;
 
 import com.eng.spring_server.domain.contents.AllContents;
+import com.eng.spring_server.dto.AllContentsResponse;
 import com.eng.spring_server.dto.AudioRequest;
 import com.eng.spring_server.dto.contents.ContentsResponseDto;
 import com.eng.spring_server.service.AllContentsService;
@@ -8,6 +9,8 @@ import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
@@ -31,5 +34,12 @@ public class AllContentsController {
         AllContents result = allContentsService.getAudioContents(id);
         ContentsResponseDto response = allContentsService.buildContentsResponse(result);
         return ResponseEntity.ok(response);
+    }
+
+    @Operation(summary = "사용자 콘텐츠 전체 조회", description = "사용자가 등록한 콘텐츠 목록을 반환합니다.")
+    @GetMapping("/library")
+    public ResponseEntity<List<AllContentsResponse>> getAllUserContents() {
+        List<AllContentsResponse> responseList = allContentsService.getAllUserContents();
+        return ResponseEntity.ok(responseList);
     }
 }

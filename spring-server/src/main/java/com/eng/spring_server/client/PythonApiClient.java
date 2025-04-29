@@ -19,7 +19,7 @@ public class PythonApiClient {
                         .queryParam("url", url)
                         .build())
                 .retrieve()
-                .bodyToMono(AllContentsResponseWrapper.class)  // ❗ json 구조 때문에 래퍼 클래스 필요
+                .bodyToMono(AllContentsResponseWrapper.class)  // json 구조 때문에 래퍼 클래스 필요
                 .block()
                 .getContent();
     }

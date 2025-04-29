@@ -14,6 +14,11 @@ import java.util.List;
 public class ContentsResponseDto {
     private String contentType; // "TEXT" 또는 "VIDEO"
     private String contentId;   // ex) vid001
+
+    private String title;             // 콘텐츠 제목
+    private int difficultyLevel;      // 난이도
+    private String category;          // 카테고리
+
     private String originalText;
     private String translatedText;
     private List<MappingDto> mapping;    // 문장 매핑 리스트

@@ -13,6 +13,7 @@ import com.eng.spring_server.util.YoutubeUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -41,6 +42,11 @@ public class AllContentsService {
         allContents.setFilePath(response.getFile_path());
         allContents.setTextGrade(response.getText_grade());
         allContents.setSoundGrade(response.getSound_grade());
+
+        allContents.setTitle(request.getTitle());
+        allContents.setDifficultyLevel(0); //
+        allContents.setCategory("General"); //
+        allContents.setUploadedAt(LocalDateTime.now());
 
         for (var textItem : response.getText()) {
             TextTime t = new TextTime();
@@ -81,15 +87,33 @@ public class AllContentsService {
         return new ContentsResponseDto(
                 contentType,
                 contentId,
+                entity.getTitle(),
+                entity.getDifficultyLevel(),
+                entity.getCategory(),
                 originalText,
                 translatedText,
                 mappingList,
                 timingList,
-                List.of() 
+                List.of()
         );
     }
 
+    public List<AllContentsResponse> getAllUserContents() {
+        return allContentsRepository.findAll().stream()
+                .map(this::buildAllContentsResponse)
+                .collect(Collectors.toList());
+    }
 
+    public AllContentsResponse buildAllContentsResponse(AllContents entity) {
+        AllContentsResponse dto = new AllContentsResponse();
+        dto.setTitle(entity.getTitle());
+        dto.setContentType("VIDEO");
+        dto.setDifficultyLevel(entity.getDifficultyLevel());
+        dto.setCategory(entity.getCategory());
+        dto.setContentId("vid" + String.format("%03d", entity.getId()));
+        dto.setUploadedAt(entity.getUploadedAt().toString());
+        return dto;
+    }
 
 
     public AllContents getAudioContents(Long id) {

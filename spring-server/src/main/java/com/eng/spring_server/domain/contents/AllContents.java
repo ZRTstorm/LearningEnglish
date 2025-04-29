@@ -5,6 +5,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -24,6 +25,11 @@ public class AllContents {
 
     @Column(unique = true) // 유튜브 영상 중복 방지
     private String videoKey;
+
+    private String title;          // 영상 제목
+    private int difficultyLevel;   // 난이도
+    private String category;       // 카테고리
+    private LocalDateTime uploadedAt;
 
     @OneToMany(mappedBy = "allContents", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<TextTime> textTimes = new ArrayList<>();
