@@ -20,6 +20,9 @@ public class TextTime {
     @Column(columnDefinition = "TEXT")
     private String text;
 
+    @Column(columnDefinition = "TEXT")
+    private String translatedText;
+
     @ManyToOne
     @JoinColumn(name = "all_contents_id")
     private AllContents allContents;

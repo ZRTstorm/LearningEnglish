@@ -6,11 +6,16 @@ import com.eng.spring_server.domain.contents.AllContentsRepository;
 import com.eng.spring_server.domain.contents.TextTime;
 import com.eng.spring_server.dto.AllContentsResponse;
 import com.eng.spring_server.dto.AudioRequest;
+import com.eng.spring_server.dto.contents.ContentsResponseDto;
+import com.eng.spring_server.dto.contents.MappingDto;
+import com.eng.spring_server.dto.contents.TimingDto;
 import com.eng.spring_server.util.YoutubeUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -22,17 +27,17 @@ public class AllContentsService {
     public Long processAudioContents(AudioRequest request) {
         String videoKey = YoutubeUtil.extractYoutubeVideoId(request.getUrl());
 
-        // 1. 이미 처리된 영상이 있는지 확인
+        // 영상 중복 확인
         Optional<AllContents> existing = allContentsRepository.findByVideoKey(videoKey);
         if (existing.isPresent()) {
             return existing.get().getId();
         }
 
-        // 2. 없으면 Python 서버로 요청
+        // 중복 아니면 파이썬 서버 요청
         AllContentsResponse response = pythonApiClient.requestAudioContents(request.getUrl());
 
         AllContents allContents = new AllContents();
-        allContents.setVideoKey(videoKey); // 저장!
+        allContents.setVideoKey(videoKey); // 저장되는 부분
         allContents.setFilePath(response.getFile_path());
         allContents.setTextGrade(response.getText_grade());
         allContents.setSoundGrade(response.getSound_grade());
@@ -48,6 +53,42 @@ public class AllContentsService {
 
         return allContentsRepository.save(allContents).getId();
     }
+
+    public ContentsResponseDto buildContentsResponse(AllContents entity) {
+        String contentType = "VIDEO"; // 영상 기준
+        String contentId = "vid" + String.format("%03d", entity.getId()); // 예: vid001
+
+        String originalText = entity.getTextTimes().stream()
+                .map(TextTime::getText)
+                .collect(Collectors.joining("\n"));
+
+        String translatedText = entity.getTextTimes().stream()
+                .map(TextTime::getTranslatedText)
+                .collect(Collectors.joining("\n"));
+
+        List<MappingDto> mappingList = entity.getTextTimes().stream()
+                .map(t -> new MappingDto(t.getText(), t.getTranslatedText()))
+                .toList();
+
+        List<TimingDto> timingList = entity.getTextTimes().stream()
+                .map(t -> new TimingDto(
+                        (long) (t.getStartTime() * 1000),
+                        (long) (t.getEndTime() * 1000),
+                        t.getText(),
+                        t.getTranslatedText()))
+                .toList();
+
+        return new ContentsResponseDto(
+                contentType,
+                contentId,
+                originalText,
+                translatedText,
+                mappingList,
+                timingList,
+                List.of() 
+        );
+    }
+
 
 
 
