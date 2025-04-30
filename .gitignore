@@ -315,3 +315,5 @@ pyrightconfig.json
 python-ai/tts-service-account.json
 
 # End of https://www.toptal.com/developers/gitignore/api/java,python,intellij
+
+.idea

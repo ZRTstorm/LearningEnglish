@@ -47,18 +47,27 @@ public class AllContentsService {
         allContents.setDifficultyLevel(0); //
         allContents.setCategory("General"); //
         allContents.setUploadedAt(LocalDateTime.now());
+        //translate text 옮기는 부분이 빠짐
+
+        String translatedText = response.getText().stream() //2025-04-30 번역 텍스트 추가
+                .map(item -> item.getTranslatedText())
+                .collect(Collectors.joining("\n"));
+        allContents.setTranslatedText(translatedText);
 
         for (var textItem : response.getText()) {
             TextTime t = new TextTime();
             t.setStartTime(textItem.getStart());
             t.setEndTime(textItem.getEnd());
             t.setText(textItem.getText());
+            t.setTranslatedText(textItem.getTranslatedText());
             t.setAllContents(allContents);
             allContents.getTextTimes().add(t);
         }
 
         return allContentsRepository.save(allContents).getId();
     }
+
+
 
     public ContentsResponseDto buildContentsResponse(AllContents entity) {
         String contentType = "VIDEO"; // 영상 기준
