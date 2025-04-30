@@ -38,8 +38,8 @@ def tts_google(sentences:list[str], output_prefix:str) -> list[BasicResponse]:
 
         response = client.synthesize_speech(request=request)
 
-        wav_file_name = f"{output_prefix}-{suffix}.wav"
-        mp3_file_name = f"{output_prefix}-{suffix}.mp3"
+        wav_file_name = os.path.join("downloads", f"{output_prefix}-{suffix}.wav")
+        mp3_file_name = os.path.join("downloads", f"{output_prefix}-{suffix}.mp3")
 
         with open(wav_file_name, "wb") as output_file:
             output_file.write(response.audio_content)
@@ -63,7 +63,7 @@ def tts_google(sentences:list[str], output_prefix:str) -> list[BasicResponse]:
             ))
 
         basic_response = BasicResponse(
-            file_path = mp3_file_name,
+            file_path = os.path.join("/home/ubuntu/my-app/", mp3_file_name),
             text = timestamps,
         )
         result.append(basic_response)

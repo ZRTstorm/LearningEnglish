@@ -9,7 +9,7 @@ from app.modules import text_translation
 from app.modules import sentence_rank
 from app.service import ocr_operating
 from app.schema.contents_response import BasicResponse, AllContentsResponse, OcrContentsResponse
-
+import os
 
 # 1. URL -> audio file extracting
 # 2. Audio file -> STT
@@ -49,6 +49,8 @@ def contents_all_operation(url: str):
     # Translation En -> Ko
     off_trans = [item.text for item in text_sound_list]
     translated = text_translation.translate_sentences(off_trans)
+
+    path = os.path.join("/home/ubuntu/my-app/", path)
 
     response = AllContentsResponse(file_path=path,
                                    text_grade=text_score,

@@ -25,7 +25,7 @@ public class AllContentsService {
     private final PythonApiClient pythonApiClient;
     private final AllContentsRepository allContentsRepository;
 
-    public Long processAudioContents(AudioRequest request) {
+        public Long processAudioContents(AudioRequest request) {
         String videoKey = YoutubeUtil.extractYoutubeVideoId(request.getUrl());
 
         // 영상 중복 확인
