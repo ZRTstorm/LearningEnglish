@@ -1,5 +1,4 @@
 from pydub import AudioSegment
-import webrtcvad
 import silero_vad
 import tempfile
 import os
@@ -61,52 +60,3 @@ def vad_segment_silero(path: str, min_duration=0.4, merge_threshold=0.3):
         return merged
     finally:
         os.remove(wav_path)
-
-# Person Audio Segmentation by webrtcvad
-def vad_segment_timestamp(path: str):
-    audio_bytes, sample_rate, audio_length = mp3_to_pcm(path)
-    vad = webrtcvad.Vad(2)
-
-    segments = []
-    frames = list(frame_generator(audio_bytes, sample_rate))
-    duration_per_frame = 30 / 1000.0
-
-    start_time = None
-
-    time = 0.0
-    for i, frame in enumerate(frames):
-        is_speech = vad.is_speech(frame, sample_rate)
-        time = i * duration_per_frame
-
-        if is_speech:
-            if start_time is None:
-                start_time = time
-        else:
-            if start_time is not None:
-                segments.append((start_time, time))
-                start_time = None
-
-    if start_time is not None:
-        segments.append((start_time, time))
-
-    rounded_segments = [(round(start_time, 2), round(time, 2)) for start_time, time in segments]
-
-    print("Sound Segment : ", rounded_segments)
-    return rounded_segments
-
-# mp3 to pcm low byte
-def mp3_to_pcm(path: str, sample_rate=16000):
-    audio = AudioSegment.from_mp3(path)
-    audio = audio.set_channels(1).set_frame_rate(sample_rate)
-    raw_audio = audio.raw_data
-
-    return raw_audio, sample_rate, len(audio) / 1000
-
-# frame generator
-def frame_generator(audio_bytes, sample_rate, frame_length=30):
-    frame_size = int(sample_rate * frame_length / 1000) * 2
-    offset = 0
-
-    while offset + frame_size < len(audio_bytes):
-        yield audio_bytes[offset:offset + frame_size]
-        offset += frame_size

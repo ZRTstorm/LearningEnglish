@@ -6,7 +6,7 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      - ./python-ai/downloads:/app/app/downloads
+      - ./python-ai/downloads:/app/downloads
       - /home/ubuntu/my-app/www.youtube.com_cookies.txt:/app/www.youtube.com_cookies.txt
     depends_on:
       - spring-server

@@ -10,12 +10,12 @@ import org.springframework.web.reactive.function.client.WebClient;
 @RequiredArgsConstructor
 public class PythonApiClient {
 
-    private final WebClient webClient = WebClient.create("http://python-service:8000");
+    private final WebClient webClient = WebClient.create("http://fastapi-app:8000");
 
     public AllContentsResponse requestAudioContents(String url) {
         return webClient.get()
                 .uri(uriBuilder -> uriBuilder
-                        .path("/audio_all_contents")
+                        .path("/contents/audio_all_contents")
                         .queryParam("url", url)
                         .build())
                 .retrieve()
