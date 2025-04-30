@@ -43,25 +43,29 @@ public class AllContentsService {
         allContents.setTextGrade(response.getText_grade());
         allContents.setSoundGrade(response.getSound_grade());
 
+
         allContents.setTitle(request.getTitle());
         allContents.setDifficultyLevel(0); //
         allContents.setCategory("General"); //
         allContents.setUploadedAt(LocalDateTime.now());
+        allContents.setTranslatedText(response.getTranslated().toString());
         //translate text 옮기는 부분이 빠짐
 
-        String translatedText = response.getText().stream() //2025-04-30 번역 텍스트 추가
-                .map(item -> item.getTranslatedText())
-                .collect(Collectors.joining("\n"));
-        allContents.setTranslatedText(translatedText);
+        int i = 0 ;
 
         for (var textItem : response.getText()) {
+
             TextTime t = new TextTime();
+
+            t.setTranslatedText(response.getTranslated().get(i)); // 추가
             t.setStartTime(textItem.getStart());
             t.setEndTime(textItem.getEnd());
             t.setText(textItem.getText());
-            t.setTranslatedText(textItem.getTranslatedText());
             t.setAllContents(allContents);
             allContents.getTextTimes().add(t);
+
+            i++;
+
         }
 
         return allContentsRepository.save(allContents).getId();
