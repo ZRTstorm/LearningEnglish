@@ -31,6 +31,9 @@ public class AllContents {
     private String category;       // 카테고리
     private LocalDateTime uploadedAt;
 
+    @Column(columnDefinition = "TEXT")
+    private String translatedText;
+
     @OneToMany(mappedBy = "allContents", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<TextTime> textTimes = new ArrayList<>();
 }
