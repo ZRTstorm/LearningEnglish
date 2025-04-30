@@ -6,13 +6,17 @@ import com.eng.spring_server.domain.contents.AllContentsRepository;
 import com.eng.spring_server.domain.contents.TextTime;
 import com.eng.spring_server.dto.AllContentsResponse;
 import com.eng.spring_server.dto.AudioRequest;
+import com.eng.spring_server.dto.UserLibraryContentResponse;
 import com.eng.spring_server.dto.contents.ContentsResponseDto;
 import com.eng.spring_server.dto.contents.MappingDto;
 import com.eng.spring_server.dto.contents.TimingDto;
 import com.eng.spring_server.util.YoutubeUtil;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -23,6 +27,7 @@ import java.util.stream.Collectors;
 public class AllContentsService {
 
     private final PythonApiClient pythonApiClient;
+    @Getter
     private final AllContentsRepository allContentsRepository;
 
         public Long processAudioContents(AudioRequest request) {
@@ -133,4 +138,22 @@ public class AllContentsService {
         return allContentsRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("해당 ID의 데이터가 없습니다."));
     }
+
+    public Path getAudioFilePathByContentsId(Long id) {
+        AllContents contents = allContentsRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("해당 콘텐츠가 없습니다: " + id));
+        return Paths.get(contents.getFilePath()); // DB에 저장된 절대경로를 Path 객체로 반환
+    }
+
+    public UserLibraryContentResponse convertToUserLibraryDto(AllContents entity) {
+        UserLibraryContentResponse dto = new UserLibraryContentResponse();
+        dto.setContentId("vid" + String.format("%03d", entity.getId()));
+        dto.setTitle(entity.getTitle());
+        dto.setContentType("VIDEO"); // 현재 모든 콘텐츠가 영상 기준이면 고정
+        dto.setUploadedAt(entity.getUploadedAt().toString());
+        dto.setDifficultyLevel(entity.getDifficultyLevel());
+        dto.setCategory(entity.getCategory());
+        return dto;
+    }
+
 }

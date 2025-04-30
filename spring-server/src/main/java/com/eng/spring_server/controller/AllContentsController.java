@@ -3,13 +3,19 @@ package com.eng.spring_server.controller;
 import com.eng.spring_server.domain.contents.AllContents;
 import com.eng.spring_server.dto.AllContentsResponse;
 import com.eng.spring_server.dto.AudioRequest;
+import com.eng.spring_server.dto.UserLibraryContentResponse;
 import com.eng.spring_server.dto.contents.ContentsResponseDto;
 import com.eng.spring_server.service.AllContentsService;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 
+import java.nio.file.Path;
 import java.util.List;
 
 @RestController
@@ -38,8 +44,32 @@ public class AllContentsController {
 
     @Operation(summary = "사용자 콘텐츠 전체 조회", description = "사용자가 등록한 콘텐츠 목록을 반환합니다.")
     @GetMapping("/library")
-    public ResponseEntity<List<AllContentsResponse>> getAllUserContents() {
-        List<AllContentsResponse> responseList = allContentsService.getAllUserContents();
+    public ResponseEntity<List<UserLibraryContentResponse>> getUserLibraryContents() {
+        List<UserLibraryContentResponse> responseList = allContentsService.getAllContentsRepository()
+                .findAll().stream()
+                .map(allContentsService::convertToUserLibraryDto)
+                .toList();
+
         return ResponseEntity.ok(responseList);
+    }
+
+
+
+
+    @Operation(summary = "mp3 파일 다운로드", description = "contentsId를 받아 연결된 오디오(mp3) 파일을 전송합니다.")
+    @GetMapping("/file")
+    public ResponseEntity<Resource> downloadAudioFile(@RequestParam Long contentsId) {
+        try {
+            Path path = allContentsService.getAudioFilePathByContentsId(contentsId);
+            Resource resource = new UrlResource(path.toUri());
+
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + path.getFileName().toString() + "\"")
+                    .contentType(MediaType.parseMediaType("audio/mpeg"))
+                    .body(resource);
+
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().build(); // 예외 처리
+        }
     }
 }
