@@ -1,8 +1,13 @@
 package com.eng.spring_server.service;
 
+import com.eng.spring_server.domain.Users;
+import com.eng.spring_server.domain.word.Definition;
+import com.eng.spring_server.domain.word.UserWord;
 import com.eng.spring_server.domain.word.Word;
 import com.eng.spring_server.domain.word.WordRepository;
 import com.eng.spring_server.dto.DictionaryResponse;
+import com.eng.spring_server.repository.UserWordRepository;
+import com.eng.spring_server.repository.UsersRepository;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
@@ -10,68 +15,100 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
 @RequiredArgsConstructor //final 필드에 생성자 자동 주입
 public class WordService {
 
-    private final WordRepository wordRepository;
 
     private final WebClient webClient = WebClient.create(); //HTTP요청(API요청)을 보내는 객체
+
+
+    private final WordRepository wordRepository;
+    private final UserWordRepository userWordRepository;
+
 
     // application.yml에서 Google API 키 읽어오기
     @Value("${google.translation.api-key}")
     private String googleApiKey;
 
-    // 단어 저장 메서드
-    public Word saveWord(String word) {
-
-        //DB에 단어 중복시 오류 출력
-        wordRepository.findByWord(word).ifPresent(w -> {
-            throw new IllegalArgumentException("이미 저장된 단어입니다.");
+    public Word performDictionarySearch(String wordStr) {
+        return wordRepository.findByWord(wordStr).orElseGet(() -> {
+            Word newWord = new Word();
+            newWord.setWord(wordStr);
+            List<Definition> defs = fetchDefinitionsFromAPI(wordStr);
+            defs.forEach(d -> d.setWord(newWord));
+            newWord.setDefinitions(defs);
+            return wordRepository.save(newWord);
         });
-
-
-        String meaningEnglish = fetchMeaningFromDictionary(word);// dictionaryapi.dev에서 뜻을 받아옴
-        String meaningKorean = translateToKorean(meaningEnglish);   // Google cloud API로 한국어 번역
-
-        return wordRepository.save(new Word(word, meaningKorean));  // 한국어로 번역된 뜻 저장
     }
 
-    // 저장된 모든 단어 조회
-    public List<Word> getAllWords() {
-        return wordRepository.findAll();
+    public void saveWordForUser(String wordStr, String uid) {
+        Word word = performDictionarySearch(wordStr);
+
+        userWordRepository.findByUser_UidAndWord_Id(uid, word.getId())
+                .orElseGet(() -> {
+                    Users user = new Users();
+                    user.setUid(uid);
+                    return userWordRepository.save(new UserWord(null, user, word));
+                });
     }
 
-    // 영어 단어 뜻 가져오기
-    private String fetchMeaningFromDictionary(String word) {
+    public List<Word> getWordsByUser(String uid) {
+        return userWordRepository.findByUser_Uid(uid).stream()
+                .map(UserWord::getWord)
+                .toList();
+    }
+
+    public Word getWordDetail(Long wordId) {
+        return wordRepository.findById(wordId)
+                .orElseThrow(() -> new IllegalArgumentException("해당 단어 없음"));
+    }
+
+    public void deleteWordForUser(String uid, Long wordId) {
+        userWordRepository.findByUser_UidAndWord_Id(uid, wordId)
+                .ifPresent(userWordRepository::delete);
+    }
+
+    private List<Definition> fetchDefinitionsFromAPI(String word) {
         try {
-            DictionaryResponse[] response = webClient.get() //word 정보를 보내서 사전을 요청하고 DictionaryResponse[] 배열에 저장
+            DictionaryResponse[] response = webClient.get()
                     .uri("https://api.dictionaryapi.dev/api/v2/entries/en/" + word)
                     .retrieve()
                     .bodyToMono(DictionaryResponse[].class)
                     .block();
 
-            if (response != null && response.length > 0 &&
-                    response[0].getMeanings() != null && !response[0].getMeanings().isEmpty()) {
-                return response[0].getMeanings().get(0).getDefinitions().get(0).getDefinition();
+            if (response != null && response.length > 0) {
+                List<Definition> defs = new ArrayList<>();
+                for (var meaning : response[0].getMeanings()) {
+                    String partOfSpeech = meaning.getPartOfSpeech();
+                    for (var def : meaning.getDefinitions()) {
+                        Definition d = new Definition();
+                        d.setDefinitionEn(def.getDefinition());
+                        d.setDefinitionKo(translate(def.getDefinition()));
+                        d.setExampleEn(def.getExample());
+                        d.setExampleKo(def.getExample() != null ? translate(def.getExample()) : null);
+                        d.setPartOfSpeech(partOfSpeech);
+                        defs.add(d);
+                    }
+                }
+                return defs;
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
-        return "뜻을 찾을 수 없습니다.";
+        return List.of();
     }
 
-    // Google Cloud 번역 API를 이용해 영어 뜻을 한국어로 번역
-    private String translateToKorean(String text) {
+    private String translate(String text) {
         try {
-            String requestBody = "{"
-                    + "\"q\": \"" + text + "\","
-                    + "\"source\": \"en\","
-                    + "\"target\": \"ko\","
-                    + "\"format\": \"text\""
-                    + "}";
+            String requestBody = "{" +
+                    "\"q\": \"" + text + "\"," +
+                    "\"source\": \"en\"," +
+                    "\"target\": \"ko\"," +
+                    "\"format\": \"text\"}";
 
             String response = webClient.post()
                     .uri("https://translation.googleapis.com/language/translate/v2?key=" + googleApiKey)
@@ -81,18 +118,8 @@ public class WordService {
                     .bodyToMono(String.class)
                     .block();
 
-            return extractTranslatedText(response);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return "번역 실패";
-        }
-    }
-
-    // 위의 메서드에서 받아온 Google 번역 API 응답에서 번역된 텍스트 추출
-    private String extractTranslatedText(String json) {
-        try {
-            ObjectMapper objectMapper = new ObjectMapper();
-            JsonNode root = objectMapper.readTree(json);
+            ObjectMapper mapper = new ObjectMapper();
+            JsonNode root = mapper.readTree(response);
             return root.path("data").path("translations").get(0).path("translatedText").asText();
         } catch (Exception e) {
             e.printStackTrace();
