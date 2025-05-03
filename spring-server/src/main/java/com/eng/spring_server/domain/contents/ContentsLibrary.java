@@ -1,28 +1,27 @@
 package com.eng.spring_server.domain.contents;
 
+import com.eng.spring_server.domain.Users;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.time.LocalDateTime;
+
 @Entity
 @Getter @Setter
-public class TextTime {
+public class ContentsLibrary {
 
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "text_time_id")
+    @Column(name = "contents_library_id")
     private Long id;
 
-    // TimeStamp
-    private float startTime;
-    private float endTime;
+    // 콘텐츠 타입 -> video , text
+    private String contentsType;
 
-    // 원문 문장
-    @Column(columnDefinition = "TEXT")
-    private String text;
-
-    // 번역 문장
-    @Column(columnDefinition = "TEXT")
-    private String translatedText;
+    // 유저 정보
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id")
+    private Users users;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "video_contents_id")
@@ -31,4 +30,7 @@ public class TextTime {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "text_contents_id")
     private TextContents textContents;
+
+    // 콘텐츠 추가 일자
+    private LocalDateTime date;
 }

@@ -1,23 +1,27 @@
 package com.eng.spring_server.service;
 
 import com.eng.spring_server.client.PythonApiClient;
-import com.eng.spring_server.domain.contents.AllContents;
-import com.eng.spring_server.domain.contents.AllContentsRepository;
+import com.eng.spring_server.domain.Users;
+import com.eng.spring_server.domain.contents.ContentsLibrary;
 import com.eng.spring_server.domain.contents.TextTime;
+import com.eng.spring_server.domain.contents.VideoContents;
 import com.eng.spring_server.dto.AllContentsResponse;
 import com.eng.spring_server.dto.AudioRequest;
+import com.eng.spring_server.dto.TextTimeDto;
 import com.eng.spring_server.dto.UserLibraryContentResponse;
 import com.eng.spring_server.dto.contents.ContentsResponseDto;
 import com.eng.spring_server.dto.contents.MappingDto;
 import com.eng.spring_server.dto.contents.TimingDto;
+import com.eng.spring_server.repository.*;
 import com.eng.spring_server.util.YoutubeUtil;
-import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -27,56 +31,92 @@ import java.util.stream.Collectors;
 public class AllContentsService {
 
     private final PythonApiClient pythonApiClient;
-    @Getter
-    private final AllContentsRepository allContentsRepository;
+    private final VideoContentsRepository videoContentsRepository;
+    private final TextContentsRepository textContentsRepository;
+    private final TextTimeRepository textTimeRepository;
+    private final UsersRepository usersRepository;
+    private final ContentsLibraryRepository contentsLibraryRepository;
 
-        public Long processAudioContents(AudioRequest request) {
+    // VideoContents 처리 작업 -> ID 반환
+    @Transactional
+    public VideoContents saveVideoContents(AudioRequest request) {
+        // Youtube 고유 ID 추출
         String videoKey = YoutubeUtil.extractYoutubeVideoId(request.getUrl());
 
         // 영상 중복 확인
-        Optional<AllContents> existing = allContentsRepository.findByVideoKey(videoKey);
-        if (existing.isPresent()) {
-            return existing.get().getId();
+        Optional<VideoContents> existContents = videoContentsRepository.findByVideoKey(videoKey);
+        if (existContents.isPresent()) {
+            return existContents.get();
         }
 
-        // 중복 아니면 파이썬 서버 요청
-        AllContentsResponse response = pythonApiClient.requestAudioContents(request.getUrl());
+        // 중복 아닐 경우 Python 서버 요청
+        AllContentsResponse response = pythonApiClient.requestVideoContents(request.getUrl());
 
-        AllContents allContents = new AllContents();
-        allContents.setVideoKey(videoKey); // 저장되는 부분
-        allContents.setFilePath(response.getFile_path());
-        allContents.setTextGrade(response.getText_grade());
-        allContents.setSoundGrade(response.getSound_grade());
+        // Video Contents 생성
+        VideoContents videoContents = new VideoContents();
+        videoContents.setVideoKey(videoKey);
+        videoContents.setFilePath(response.getFile_path());
+        videoContents.setTextGrade(response.getText_grade());
+        videoContents.setSoundGrade(response.getSound_grade());
 
+        Path filePath = Paths.get(response.getFile_path());
+        String fileName = filePath.getFileName().toString();
+        videoContents.setTitle(fileName);
+        videoContents.setUploadDate(LocalDateTime.now());
 
-        allContents.setTitle(request.getTitle());
-        allContents.setDifficultyLevel(0); //
-        allContents.setCategory("General"); //
-        allContents.setUploadedAt(LocalDateTime.now());
-        allContents.setTranslatedText(response.getTranslated().toString());
-        //translate text 옮기는 부분이 빠짐
+        // Video Contents Save
+        VideoContents saveContents = videoContentsRepository.save(videoContents);
 
-        int i = 0 ;
-
-        for (var textItem : response.getText()) {
-
-            TextTime t = new TextTime();
-
-            t.setTranslatedText(response.getTranslated().get(i)); // 추가
-            t.setStartTime(textItem.getStart());
-            t.setEndTime(textItem.getEnd());
-            t.setText(textItem.getText());
-            t.setAllContents(allContents);
-            allContents.getTextTimes().add(t);
-
-            i++;
-
+        // Text - Time - Translated Mapping
+        List<TextTime> timestampList = saveTextTime(response.getText(), response.getTranslated());
+        for (TextTime textTime : timestampList) {
+            textTime.setVideoContents(videoContents);
         }
 
-        return allContentsRepository.save(allContents).getId();
+        // TextTime Save
+        textTimeRepository.saveAll(timestampList);
+
+        return saveContents;
     }
 
 
+    // TextTime 객체 구성 -> 저장
+    private List<TextTime> saveTextTime(List<TextTimeDto> text, List<String> translated) {
+        // List 개수 체크
+        if (text.size() != translated.size()) {
+            throw new IllegalStateException("The num of Eng Text & Kor Text did not same.")
+        }
+
+        List<TextTime> timestampList = new ArrayList<>();
+
+        for (int i = 0; i < text.size(); i++) {
+            TextTimeDto dto = text.get(i);
+            String korText = translated.get(i);
+
+            TextTime entity = new TextTime();
+            entity.setStartTime(dto.getStart());
+            entity.setEndTime(dto.getEnd());
+            entity.setText(dto.getText());
+            entity.setTranslatedText(korText);
+
+            timestampList.add(entity);
+        }
+
+        return timestampList;
+    }
+
+    public void saveVideoLibrary(Long userId, VideoContents videoContents) {
+        ContentsLibrary contentsLibrary = new ContentsLibrary();
+
+        // get Proxy User
+        Users users = usersRepository.getReferenceById(userId);
+
+        contentsLibrary.setContentsType("video");
+        contentsLibrary.setUsers(users);
+        contentsLibrary.setVideoContents(videoContents);
+
+        contentsLibraryRepository.save(contentsLibrary);
+    }
 
     public ContentsResponseDto buildContentsResponse(AllContents entity) {
         String contentType = "VIDEO"; // 영상 기준
@@ -131,12 +171,6 @@ public class AllContentsService {
         dto.setContentId("vid" + String.format("%03d", entity.getId()));
         dto.setUploadedAt(entity.getUploadedAt().toString());
         return dto;
-    }
-
-
-    public AllContents getAudioContents(Long id) {
-        return allContentsRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("해당 ID의 데이터가 없습니다."));
     }
 
     public Path getAudioFilePathByContentsId(Long id) {

@@ -1,6 +1,6 @@
 package com.eng.spring_server.controller;
 
-import com.eng.spring_server.domain.contents.AllContents;
+import com.eng.spring_server.domain.contents.VideoContents;
 import com.eng.spring_server.dto.AllContentsResponse;
 import com.eng.spring_server.dto.AudioRequest;
 import com.eng.spring_server.dto.UserLibraryContentResponse;
@@ -8,6 +8,7 @@ import com.eng.spring_server.dto.contents.ContentsResponseDto;
 import com.eng.spring_server.service.AllContentsService;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.core.io.Resource;
@@ -25,13 +26,17 @@ public class AllContentsController {
 
     private final AllContentsService allContentsService;
 
-    @Operation(summary = "영상 등록", description = "유튜브 URL을 받아 텍스트로 변환하고 DB에 저장한 후 콘텐츠 정보를 반환합니다.")
+    @Operation(summary = "영상 등록", description = "영상 링크를 받아 콘텐츠 자료 생성 후 저장한다")
     @PostMapping("/process")
-    public ResponseEntity<ContentsResponseDto> processAudio(@RequestBody AudioRequest request) {
-        Long id = allContentsService.processAudioContents(request);
-        AllContents result = allContentsService.getAudioContents(id);
-        ContentsResponseDto response = allContentsService.buildContentsResponse(result);
-        return ResponseEntity.ok(response);
+    public ResponseEntity<?> processAudio(@RequestBody AudioRequest request) {
+        // VideoContents 저장
+        VideoContents videoContents = allContentsService.saveVideoContents(request);
+
+        // ContentsLibrary 저장
+        allContentsService.saveVideoLibrary(request.getUser_id(), videoContents);
+
+        // 응답 형태 확정 필요
+        return ResponseEntity.status(HttpStatus.OK).body("Video Contents");
     }
 
     @Operation(summary = "영상 조회", description = "ID를 기반으로 저장된 콘텐츠 전체 정보 반환")
@@ -52,7 +57,6 @@ public class AllContentsController {
 
         return ResponseEntity.ok(responseList);
     }
-
 
 
 

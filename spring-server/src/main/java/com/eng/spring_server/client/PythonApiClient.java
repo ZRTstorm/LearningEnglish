@@ -12,7 +12,7 @@ public class PythonApiClient {
 
     private final WebClient webClient = WebClient.create("http://fastapi-app:8000");
 
-    public AllContentsResponse requestAudioContents(String url) {
+    public AllContentsResponse requestVideoContents(String url) {
         return webClient.get()
                 .uri(uriBuilder -> uriBuilder
                         .path("/contents/audio_all_contents")
