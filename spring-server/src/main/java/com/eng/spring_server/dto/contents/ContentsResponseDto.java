@@ -9,6 +9,7 @@ public class ContentsResponseDto {
     // "video" or "text"
     private String contentType;
     private Long contentId;
+    private String videoUrl;
 
     private String title;
     private float textGrade;

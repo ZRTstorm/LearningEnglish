@@ -6,10 +6,8 @@ import com.eng.spring_server.domain.contents.ContentsLibrary;
 import com.eng.spring_server.domain.contents.TextContents;
 import com.eng.spring_server.domain.contents.TextTime;
 import com.eng.spring_server.domain.contents.VideoContents;
-import com.eng.spring_server.dto.AllContentsResponse;
-import com.eng.spring_server.dto.AudioRequest;
-import com.eng.spring_server.dto.TextTimeDto;
-import com.eng.spring_server.dto.UserLibraryResponse;
+import com.eng.spring_server.dto.*;
+import com.eng.spring_server.dto.contents.BasicResponse;
 import com.eng.spring_server.dto.contents.ContentsResponseDto;
 import com.eng.spring_server.dto.contents.TimestampDto;
 import com.eng.spring_server.repository.*;
@@ -39,7 +37,7 @@ public class AllContentsService {
     private final UsersRepository usersRepository;
     private final ContentsLibraryRepository contentsLibraryRepository;
 
-    // VideoContents 처리 작업 -> ID 반환
+    // VideoContents 처리 작업
     @Transactional
     public VideoContents saveVideoContents(AudioRequest request) {
         // Youtube 고유 ID 추출
@@ -72,7 +70,7 @@ public class AllContentsService {
         // Text - Time - Translated Mapping
         List<TextTime> timestampList = saveTextTime(response.getText(), response.getTranslated());
         for (TextTime textTime : timestampList) {
-            textTime.setVideoContents(videoContents);
+            textTime.setVideoContents(saveContents);
         }
 
         // TextTime Save
@@ -81,6 +79,48 @@ public class AllContentsService {
         return saveContents;
     }
 
+    // TextContents 처리 작업
+    @Transactional
+    public TextContents saveTextContents(TextRequest textRequest) {
+        // 콘텐츠 중복 확인
+        Optional<TextContents> byTitle = textContentsRepository.findByTitle(textRequest.getTitle());
+        if (byTitle.isPresent()) {
+            return byTitle.get();
+        }
+
+        // 중복 아닐 경우 Python 서버 요청
+        OcrContentsResponse response = pythonApiClient.requestTextContents(textRequest.getText(), textRequest.getTitle());
+
+        List<String> regions = List.of("US", "GB", "AU");
+
+        TextContents textCon = null;
+        for (int i = 0; i < regions.size(); i++) {
+            String region = regions.get(i);
+            BasicResponse basic = response.getFile_text().get(i);
+
+            TextContents contents = new TextContents();
+            contents.setFilePath(basic.getFile_path());
+            contents.setRegion(region);
+            contents.setTextGrade(response.getText_grade());
+            contents.setTitle(textRequest.getTitle());
+            contents.setUploadDate(LocalDateTime.now());
+
+            // TextContents Save
+            TextContents savedContents = textContentsRepository.save(contents);
+
+            List<TextTime> stampList = saveTextTime(response.getFile_text().get(i).getText(), response.getTranslated());
+            for (TextTime textTime : stampList) {
+                textTime.setTextContents(savedContents);
+            }
+
+            // TextTime Save
+            textTimeRepository.saveAll(stampList);
+
+            if (i == 0) textCon = savedContents;
+        }
+
+        return textCon;
+    }
 
     // TextTime 객체 구성 -> 저장
     private List<TextTime> saveTextTime(List<TextTimeDto> text, List<String> translated) {
@@ -108,6 +148,7 @@ public class AllContentsService {
     }
 
     // ContentsLibrary -> VideoContents 추가
+    @Transactional
     public void saveVideoLibrary(Long userId, String title, VideoContents videoContents) {
         ContentsLibrary contentsLibrary = new ContentsLibrary();
 
@@ -118,11 +159,29 @@ public class AllContentsService {
         contentsLibrary.setTitle(title);
         contentsLibrary.setUsers(users);
         contentsLibrary.setVideoContents(videoContents);
+        contentsLibrary.setDate(LocalDateTime.now());
+
+        contentsLibraryRepository.save(contentsLibrary);
+    }
+
+    @Transactional
+    public void saveTextLibrary(Long userId, String title, TextContents textContents) {
+        ContentsLibrary contentsLibrary = new ContentsLibrary();
+
+        // get Proxy User
+        Users users = usersRepository.getReferenceById(userId);
+
+        contentsLibrary.setContentsType("text");
+        contentsLibrary.setTitle(title);
+        contentsLibrary.setUsers(users);
+        contentsLibrary.setTextContents(textContents);
+        contentsLibrary.setDate(LocalDateTime.now());
 
         contentsLibraryRepository.save(contentsLibrary);
     }
 
     // Video Contents 전체 정보 조회
+    @Transactional(readOnly = true)
     public ContentsResponseDto buildContentsResponse(Long contentId) {
         // Contents 조회
         Optional<VideoContents> byId = videoContentsRepository.findById(contentId);
@@ -137,6 +196,7 @@ public class AllContentsService {
 
         response.setContentType("video");
         response.setContentId(videoContents.getId());
+        response.setVideoUrl(buildYoutubeUrl(videoContents.getVideoKey()));
         response.setTitle(videoContents.getTitle());
         response.setTextGrade(videoContents.getTextGrade());
         response.setSoundGrade(videoContents.getSoundGrade());
@@ -168,7 +228,60 @@ public class AllContentsService {
         return response;
     }
 
+    // TextContents 전체 정보 조회
+    @Transactional(readOnly = true)
+    public TextsResponseDto buildTextResponse(Long contentId) {
+        Optional<TextContents> byId = textContentsRepository.findById(contentId);
+        if (byId.isEmpty()) throw new IllegalStateException("TextContent is not in DB");
+
+        String title = byId.get().getTitle();
+        List<TextContents> textContents = textContentsRepository.findAllByTitle(title);
+
+        TextsResponseDto response = new TextsResponseDto();
+        response.setContentType("text");
+        response.setContentId(contentId);
+        response.setTitle(title);
+        response.setTextGrade(textContents.get(0).getTextGrade());
+
+        List<TextsResponseDto.TextFile> textFileList = new ArrayList<>();
+        for (int i = 0; i < textContents.size(); i++) {
+            List<TextTime> timestampList = textTimeRepository.findByTextContents(textContents.get(i));
+
+            if (i == 0) {
+                String originalText = timestampList.stream()
+                        .map(TextTime::getText)
+                        .map(String::trim)
+                        .collect(Collectors.joining(" "));
+                response.setOriginalText(originalText);
+
+                String translatedText = timestampList.stream()
+                        .map(TextTime::getTranslatedText)
+                        .map(String::trim)
+                        .collect(Collectors.joining(" "));
+                response.setTranslatedText(translatedText);
+            }
+
+            TextsResponseDto.TextFile item = new TextsResponseDto.TextFile();
+            item.setFilePath(textContents.get(i).getFilePath());
+            // TextTime -> TimestampDto
+            List<TimestampDto> timeList = timestampList.stream()
+                    .map(t -> new TimestampDto(
+                            (long) (t.getStartTime() * 1000),
+                            (long) (t.getEndTime() * 1000),
+                            t.getText(),
+                            t.getTranslatedText()))
+                    .toList();
+            item.setSentences(timeList);
+
+            textFileList.add(item);
+        }
+        response.setTextFiles(textFileList);
+
+        return response;
+    }
+
     // User 가 보유 하는 모든 콘텐츠 조회
+    @Transactional(readOnly = true)
     public List<UserLibraryResponse> getUserLibrary(Long userId) {
         // ContentsLibrary List 조회
         List<ContentsLibrary> library = contentsLibraryRepository.findByUsersId(userId);
@@ -194,6 +307,8 @@ public class AllContentsService {
                 }).toList();
     }
 
+    // 오디오 파일 경로 조회
+    @Transactional(readOnly = true)
     public Path getAudioFilePath(String contentsType, Long contentId) {
         if (contentsType.equals("video")) {
             Optional<VideoContents> byId = videoContentsRepository.findById(contentId);
@@ -206,5 +321,9 @@ public class AllContentsService {
 
             return Paths.get(byId.get().getFilePath());
         }
+    }
+
+    private String buildYoutubeUrl(String videoId) {
+        return "https://www.youtube.com/watch?v=" + videoId;
     }
 }

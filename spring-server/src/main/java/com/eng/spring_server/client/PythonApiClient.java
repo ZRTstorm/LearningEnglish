@@ -1,6 +1,7 @@
 package com.eng.spring_server.client;
 
 import com.eng.spring_server.dto.AllContentsResponse;
+import com.eng.spring_server.dto.OcrContentsResponse;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -24,9 +25,27 @@ public class PythonApiClient {
                 .getContent();
     }
 
+    public OcrContentsResponse requestTextContents(String text, String name) {
+        return webClient.get()
+                .uri(uriBuilder -> uriBuilder
+                        .path("/contents/ocr_all_contents")
+                        .queryParam("text", text)
+                        .queryParam("name", name)
+                        .build())
+                .retrieve()
+                .bodyToMono(OcrContentsResponseWrapper.class)
+                .block()
+                .getContent();
+    }
+
     @Getter
     private static class AllContentsResponseWrapper {
         private String status;
         private AllContentsResponse content;
+    }
+    @Getter
+    private static class OcrContentsResponseWrapper {
+        private String status;
+        private OcrContentsResponse content;
     }
 }

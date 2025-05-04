@@ -1,9 +1,12 @@
 package com.eng.spring_server.controller;
 
+import com.eng.spring_server.domain.contents.TextContents;
 import com.eng.spring_server.domain.contents.VideoContents;
-import com.eng.spring_server.dto.AllContentsResponse;
 import com.eng.spring_server.dto.AudioRequest;
+import com.eng.spring_server.dto.TextRequest;
+import com.eng.spring_server.dto.TextsResponseDto;
 import com.eng.spring_server.dto.UserLibraryResponse;
+import com.eng.spring_server.dto.contents.ContentIdResponse;
 import com.eng.spring_server.dto.contents.ContentsResponseDto;
 import com.eng.spring_server.service.AllContentsService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -27,7 +30,7 @@ public class AllContentsController {
     private final AllContentsService allContentsService;
 
     @Operation(summary = "영상 콘텐츠 등록", description = "영상 링크를 받아 콘텐츠 자료 생성 후 저장한다")
-    @PostMapping("/process")
+    @PostMapping("/video/process")
     public ResponseEntity<?> processAudio(@RequestBody AudioRequest request) {
         // VideoContents 저장
         VideoContents videoContents = allContentsService.saveVideoContents(request);
@@ -35,15 +38,44 @@ public class AllContentsController {
         // ContentsLibrary 저장
         allContentsService.saveVideoLibrary(request.getUser_id(), request.getTitle(), videoContents);
 
+        ContentIdResponse response = new ContentIdResponse();
+        response.setContentsType("video");
+        response.setContentId(videoContents.getId());
+
         // 응답 형태 확정 필요
-        return ResponseEntity.status(HttpStatus.OK).body("Video Contents");
+        return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 
-    @Operation(summary = "영상 콘텐츠 조회", description = "콘텐츠 ID 로 저장된 콘텐츠 전체 정보 반환")
+    @Operation(summary = "텍스트 콘텐츠 등록", description = "텍스트를 받아 콘텐츠 자료 생성 후 저장한다")
+    @PostMapping("/text/process")
+    public ResponseEntity<?> processText(@RequestBody TextRequest request) {
+        // TextContents 저장
+        TextContents textContents = allContentsService.saveTextContents(request);
+
+        // ContentsLibrary 저장
+        allContentsService.saveTextLibrary(request.getUserId(), request.getTitle(), textContents);
+
+        ContentIdResponse response = new ContentIdResponse();
+        response.setContentsType("text");
+        response.setContentId(textContents.getId());
+
+        // 응답 형태 확정 필요
+        return ResponseEntity.status(HttpStatus.OK).body(response);
+    }
+
+    @Operation(summary = "영상 콘텐츠 조회", description = "콘텐츠 ID 로 저장된 영상 콘텐츠 전체 정보 반환")
     @GetMapping("/video/{id}")
     public ResponseEntity<?> getAudio(@PathVariable Long id) {
         // Video Content 전체 정보 조회
         ContentsResponseDto response = allContentsService.buildContentsResponse(id);
+
+        return ResponseEntity.status(HttpStatus.OK).body(response);
+    }
+
+    @Operation(summary = "텍스트 콘텐츠 조회", description = "콘텐츠 ID 로 저장된 텍스트 콘텐츠 전체 정보 반환")
+    @GetMapping("/text/{id}")
+    public ResponseEntity<?> getText(@PathVariable Long id) {
+        TextsResponseDto response = allContentsService.buildTextResponse(id);
 
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
