@@ -5,11 +5,9 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-@Getter
-@Setter
-@NoArgsConstructor
+@Getter @Setter
 @AllArgsConstructor
-public class TimingDto {
+public class TimestampDto {
     private long startTimeMillis;
     private long endTimeMillis;
     private String originalText;
