@@ -1,4 +1,4 @@
-package com.eng.spring_server.dto.contents;
+package com.eng.spring_server.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

@@ -1,5 +1,6 @@
 package com.eng.spring_server.dto.contents;
 
+import com.eng.spring_server.dto.WordDto;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;

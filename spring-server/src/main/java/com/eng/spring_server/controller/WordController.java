@@ -1,16 +1,15 @@
 package com.eng.spring_server.controller;
 
 import com.eng.spring_server.domain.word.Word;
-import com.eng.spring_server.service.WordService;
-import com.eng.spring_server.dto.WordRequest;
+import com.eng.spring_server.dto.PagedWordResponse;
 import com.eng.spring_server.dto.WordResponse;
+import com.eng.spring_server.service.WordService;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @RestController
 @RequiredArgsConstructor
@@ -32,17 +31,34 @@ public class WordController {
         return ResponseEntity.ok(wordService.getWordsByUser(uid));
     }
 
-    @Operation(summary = "단어 상세 조회", description = "단어 ID로 단어 정보와 정의 목록을 조회")
-    @GetMapping("/{wordId}")
-    public ResponseEntity<Word> getWordDetail(@PathVariable Long wordId) {
-        return ResponseEntity.ok(wordService.getWordDetail(wordId));
+    @Operation(summary = "단어 문자열로 상세 조회", description = "단어 문자열을 받아 DB에 있으면 그대로 반환, 없으면 사전 API에서 가져와 저장 후 반환")
+    @GetMapping("/detail")
+    public ResponseEntity<WordResponse> getWordDetailByWordStr(@RequestParam String word) {
+        Word wordEntity = wordService.performDictionarySearch(word); // 있으면 그대로, 없으면 저장
+        WordResponse dto = wordService.convertToDto(wordEntity);
+        return ResponseEntity.ok(dto);
     }
+
 
     @Operation(summary = "단어 삭제", description = "사용자 uid와 단어 ID를 기반으로 단어를 단어장에서 삭제")
     @DeleteMapping("/delete")
     public ResponseEntity<Void> deleteWordForUser(@RequestParam String uid, @RequestParam Long wordId) {
         wordService.deleteWordForUser(uid, wordId);
         return ResponseEntity.ok().build();
+    }
+
+    @Operation(summary = "페이지 단위 단어 조회", description = "uid와 page를 받아 유저의 단어 리스트를 10개씩 반환")
+    @GetMapping("/user/{uid}/paged")
+    public ResponseEntity<List<WordResponse>> getPagedWordsByUser(
+            @PathVariable String uid,
+            @RequestParam(defaultValue = "0") int page) {
+
+        List<Word> words = wordService.getPagedWordsByUser(uid, page);
+        List<WordResponse> response = words.stream()
+                .map(wordService::convertToDto)
+                .toList();
+
+        return ResponseEntity.ok(response);
     }
 
 

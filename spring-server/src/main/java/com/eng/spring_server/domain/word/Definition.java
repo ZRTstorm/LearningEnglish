@@ -1,10 +1,15 @@
 package com.eng.spring_server.domain.word;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Getter
@@ -24,7 +29,15 @@ public class Definition {
     private String exampleEn; // 영어 예문
     private String exampleKo; // 예문 한글 번역
 
+    @ElementCollection // 동의어 리스트
+    private List<String> synonyms = new ArrayList<>();
+
+    @ElementCollection // 반의어 리스트
+    private List<String> antonyms = new ArrayList<>();
+
     @ManyToOne
     @JoinColumn(name = "word_id")
+    @JsonIgnore
+    @JsonBackReference
     private Word word; // 소속된 단어
 }

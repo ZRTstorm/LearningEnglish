@@ -25,6 +25,8 @@ public class DictionaryResponse {
         public static class Definition {
             private String definition;
             private String example;
+            private List<String> synonyms;
+            private List<String> antonyms;
         }
     }
 }

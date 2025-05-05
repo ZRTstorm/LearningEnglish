@@ -1,20 +1,14 @@
 package com.eng.spring_server.dto;
 
-import com.eng.spring_server.domain.word.Word;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
+import java.util.List;
 
 @Getter
+@AllArgsConstructor
 public class WordResponse {
-
-
-    //
-    private Long id;
     private String word;
-    private String meaning;
-
-    public WordResponse(Word word) {
-        this.id = word.getId();
-        this.word = word.getWord();
-        this.meaning = word.getMeaning();
-    }
+    private String phonetic;
+    private String audioUrl;
+    private List<DefinitionResponse> definitions;
 }
