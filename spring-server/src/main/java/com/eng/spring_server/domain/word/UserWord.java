@@ -18,7 +18,7 @@ public class UserWord {
     private Long id; // 고유 식별자
 
     @ManyToOne
-    @JoinColumn(name = "user_uid", referencedColumnName = "uid") 
+    @JoinColumn(name = "user_id")
     private Users user; // 단어 저장한 사용자
 
     @ManyToOne

@@ -6,8 +6,7 @@ import lombok.Setter;
 
 @Getter @Setter
 @AllArgsConstructor
-public class ContentIdDto {
-
-    private String contentType;
-    private Long contentId;
+public class SentenceListResponseDto {
+    private Long id;
+    private String text;
 }

@@ -1,9 +1,6 @@
 package com.eng.spring_server.client;
 
-import com.eng.spring_server.dto.AllContentsResponse;
-import com.eng.spring_server.dto.OcrContentsResponse;
-import com.eng.spring_server.dto.SummaTextDto;
-import com.eng.spring_server.dto.TextRankResponseDto;
+import com.eng.spring_server.dto.*;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -68,6 +65,24 @@ public class PythonApiClient {
                 .bodyToMono(SummaTextDtoWrapper.class)
                 .block()
                 .getContent();
+    }
+
+    public String requestTts(String text) {
+        return webClient.post()
+                .uri("/text_to_speech")
+                .bodyValue(Map.of("text", text))
+                .retrieve()
+                .bodyToMono(String.class)
+                .block();
+    }
+
+    public DictationEvalResponseDto evaluateDictation(String reference, String userInput) {
+        return webClient.post()
+                .uri("/text_grade")
+                .bodyValue(Map.of("reference", reference, "hypothesis", userInput))
+                .retrieve()
+                .bodyToMono(DictationEvalResponseDto.class)
+                .block();
     }
 
     @Getter

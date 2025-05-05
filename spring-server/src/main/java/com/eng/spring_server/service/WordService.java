@@ -127,8 +127,8 @@ public class WordService {
                         d.setExampleEn(def.getExample());
                         d.setExampleKo(def.getExample() != null ? translate(def.getExample()) : null);
                         d.setPartOfSpeech(partOfSpeech);
-                        d.setSynonyms(def.getSynonyms()); // 동의어
-                        d.setAntonyms(def.getAntonyms()); // 반의어
+                        d.setSynonyms(def.getSynonyms()); //
+                        d.setAntonyms(def.getAntonyms()); //
                         defs.add(d);
                     }
                 }
