@@ -79,7 +79,7 @@ public class WordService {
     public void saveWordForUser(String wordStr, String uid) {
         Word word = performDictionarySearch(wordStr);
 
-        Users user = usersRepository.findByUid(uid) // ✅ uid를 기준으로 DB에서 사용자 조회
+        Users user = usersRepository.findByUid(uid) //
                 .orElseThrow(() -> new IllegalArgumentException("해당 uid 사용자를 찾을 수 없습니다."));
 
         userWordRepository.findByUser_IdAndWord_Id(user.getId(), word.getId()) // ✅ userId 기준으로 연결 확인
@@ -87,7 +87,7 @@ public class WordService {
     }
 
     public List<Word> getWordsByUser(String uid) {
-        Users user = usersRepository.findByUid(uid) // ✅ uid → userId 변환
+        Users user = usersRepository.findByUid(uid) //
                 .orElseThrow(() -> new IllegalArgumentException("해당 uid 사용자를 찾을 수 없습니다."));
 
         return userWordRepository.findByUser_Id(user.getId()).stream()
@@ -101,7 +101,7 @@ public class WordService {
     }
 
     public void deleteWordForUser(String uid, Long wordId) {
-        Users user = usersRepository.findByUid(uid) // ✅ 삭제도 uid로 처리하되 내부적으로 id로 변환
+        Users user = usersRepository.findByUid(uid) //
                 .orElseThrow(() -> new IllegalArgumentException("해당 uid 사용자를 찾을 수 없습니다."));
 
         userWordRepository.findByUser_IdAndWord_Id(user.getId(), wordId)
