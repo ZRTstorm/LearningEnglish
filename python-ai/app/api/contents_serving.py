@@ -1,7 +1,12 @@
 from fastapi import APIRouter
+from pydantic import BaseModel
+
 from app.service import contents_extract
 
 router = APIRouter()
+
+class SentenceRequests(BaseModel):
+    sentences: list[str]
 
 @router.get("/audio_all_contents")
 def audio_all_contents(url: str):
@@ -19,18 +24,18 @@ def ocr_all_contents(text: str, name: str):
     except Exception as e:
         return {"status": "error", "content": str(e)}
 
-@router.get("/sentence_ranked_contents")
-def sentence_ranked_contents(sentences: list[str]):
+@router.post("/sentence_ranked_contents")
+def sentence_ranked_contents(request: SentenceRequests):
     try:
-        ranked = contents_extract.sentence_rank_operation(sentences)
-        return {"status": "success", "content": ranked}
+        ranked = contents_extract.sentence_rank_operation(request.sentences)
+        return {"status": "success", "content": {"rankSentences": ranked}}
     except Exception as e:
         return {"status": "error", "content": str(e)}
 
-@router.get("/summarize_contents")
-def summarize_contents(sentences: list[str]):
+@router.post("/summarize_contents")
+def summarize_contents(request: SentenceRequests):
     try:
-        summarization = contents_extract.text_summarize_operation(sentences)
-        return {"status": "success", "content": summarization}
+        summarization = contents_extract.text_summarize_operation(request.sentences)
+        return {"status": "success", "content": {"summaSentences": summarization}}
     except Exception as e:
         return {"status": "error", "content": str(e)}
