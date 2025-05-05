@@ -70,7 +70,7 @@ def ocr_all_operation(text: str, name: str):
     sentences = [item.text for item in sentence_list]
     translated = text_translation.translate_sentences(sentences)
 
-    response = OcrContentsResponse(text_grade=exec_result.text_grade,
+    response = OcrContentsResponse(text_grade=exec_result.grade,
                                    file_text=exec_result.contents,
                                    translated=translated)
     return response

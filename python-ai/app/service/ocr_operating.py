@@ -12,7 +12,8 @@ def ocr_text_executing(text: str, file_name: str):
     tts_list = text_to_speech.tts_google(sentences, file_name)
 
     # Text Grade evaluation
-    text_grade = grade_classification.readability_evaluation(tts_list[0].text)
+    text_grade, _ = grade_classification.readability_evaluation(tts_list[0].text)
+    print("text_grade:", text_grade)
 
     result = TTSResponse(
         grade = text_grade,

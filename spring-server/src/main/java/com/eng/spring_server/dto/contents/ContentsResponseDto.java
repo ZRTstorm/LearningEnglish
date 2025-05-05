@@ -1,28 +1,23 @@
 package com.eng.spring_server.dto.contents;
 
-import com.eng.spring_server.dto.WordDto;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.Setter;
-
 import java.util.List;
 
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
+@Getter @Setter
 public class ContentsResponseDto {
-    private String contentType; // "TEXT" 또는 "VIDEO"
-    private String contentId;   // ex) vid001
+    // "video" or "text"
+    private String contentType;
+    private Long contentId;
+    private String videoUrl;
 
-    private String title;             // 콘텐츠 제목
-    private int difficultyLevel;      // 난이도
-    private String category;          // 카테고리
+    private String title;
+    private float textGrade;
+    private float soundGrade;
 
     private String originalText;
     private String translatedText;
-    private List<MappingDto> mapping;    // 문장 매핑 리스트
-    private List<TimingDto> timings;     // 영상 전용 타임스탬프 리스트
-    private List<WordDto> words;          // 단어 리스트
+
+    private List<TimestampDto> sentences;
+    private List<WordDto> words;
 }

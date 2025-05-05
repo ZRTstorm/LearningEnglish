@@ -18,6 +18,9 @@ public class ContentsLibrary {
     // 콘텐츠 타입 -> video , text
     private String contentsType;
 
+    // User Title
+    private String title;
+
     // 유저 정보
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")

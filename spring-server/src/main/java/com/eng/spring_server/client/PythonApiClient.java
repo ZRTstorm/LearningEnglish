@@ -1,10 +1,17 @@
 package com.eng.spring_server.client;
 
 import com.eng.spring_server.dto.AllContentsResponse;
+import com.eng.spring_server.dto.OcrContentsResponse;
+import com.eng.spring_server.dto.SummaTextDto;
+import com.eng.spring_server.dto.TextRankResponseDto;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -24,9 +31,65 @@ public class PythonApiClient {
                 .getContent();
     }
 
+    public OcrContentsResponse requestTextContents(String text, String name) {
+        return webClient.get()
+                .uri(uriBuilder -> uriBuilder
+                        .path("/contents/ocr_all_contents")
+                        .queryParam("text", text)
+                        .queryParam("name", name)
+                        .build())
+                .retrieve()
+                .bodyToMono(OcrContentsResponseWrapper.class)
+                .block()
+                .getContent();
+    }
+
+    public TextRankResponseDto requestTextRank(List<String> sentences) {
+        Map<String, List<String>> body = new HashMap<>();
+        body.put("sentences", sentences);
+
+        return webClient.post()
+                .uri("/contents/sentence_ranked_contents")
+                .bodyValue(body)
+                .retrieve()
+                .bodyToMono(TextRankResponseDtoWrapper.class)
+                .block()
+                .getContent();
+    }
+
+    public SummaTextDto requestSummarization(List<String> sentences) {
+        Map<String, List<String>> body = new HashMap<>();
+        body.put("sentences", sentences);
+
+        return webClient.post()
+                .uri("/contents/summarize_contents")
+                .bodyValue(body)
+                .retrieve()
+                .bodyToMono(SummaTextDtoWrapper.class)
+                .block()
+                .getContent();
+    }
+
     @Getter
     private static class AllContentsResponseWrapper {
         private String status;
         private AllContentsResponse content;
+    }
+    @Getter
+    private static class OcrContentsResponseWrapper {
+        private String status;
+        private OcrContentsResponse content;
+    }
+
+    @Getter
+    private static class TextRankResponseDtoWrapper {
+        private String status;
+        private TextRankResponseDto content;
+    }
+
+    @Getter
+    private static class SummaTextDtoWrapper {
+        private String status;
+        private SummaTextDto content;
     }
 }
