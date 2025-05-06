@@ -5,6 +5,7 @@ import com.eng.spring_server.domain.contents.*;
 import com.eng.spring_server.dto.ContentIdDto;
 import com.eng.spring_server.dto.SummaTextDto;
 import com.eng.spring_server.dto.TextRankResponseDto;
+import com.eng.spring_server.dto.contents.TimestampDto;
 import com.eng.spring_server.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -13,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -110,5 +112,21 @@ public class TextOperationService {
         }
 
         summarizationRepository.saveAll(summarizes);
+    }
+
+    @Transactional(readOnly = true)
+    public List<TimestampDto> getImportantList(String contentsType, Long contentId) {
+        return sentenceRepository.findSentencesByContents(contentsType, contentId);
+    }
+
+    @Transactional(readOnly = true)
+    public String getSummaryText(String contentType, Long contentId) {
+        List<Summarization> summaries = summarizationRepository.findAllByContentTypeAndContentIdOrderByIdAsc(contentType, contentId);
+
+        return summaries.stream()
+                .map(Summarization::getText)
+                .filter(Objects::nonNull)
+                .map(String::trim)
+                .collect(Collectors.joining(" "));
     }
 }

@@ -12,5 +12,6 @@ public interface SummarizationRepository extends JpaRepository<Summarization, Lo
     Optional<Summarization> findByContentTypeAndContentId(String contentType, Long contentId);
 
     // ContentType & ContentId 와 일치 하는 리스트 조회
-    List<Summarization> findAllByContentTypeAndContentId(String contentType, Long contentId);
+    List<Summarization> findAllByContentTypeAndContentIdOrderByIdAsc(String contentType, Long contentId);
+
 }

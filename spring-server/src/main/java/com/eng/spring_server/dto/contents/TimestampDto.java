@@ -7,6 +7,7 @@ import lombok.Setter;
 
 @Getter @Setter
 @AllArgsConstructor
+@NoArgsConstructor
 public class TimestampDto {
     private long startTimeMillis;
     private long endTimeMillis;
