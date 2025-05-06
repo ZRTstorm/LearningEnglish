@@ -105,4 +105,20 @@ public class AllContentsController {
             return ResponseEntity.internalServerError().build();
         }
     }
+
+    @Operation(summary = "콘텐츠 라이브러리 삭제", description = "사용자의 콘텐츠 라이브러리를 삭제 한다")
+    @DeleteMapping("/library/{userId}/{libraryId}")
+    public ResponseEntity<?> deleteLibrary(@PathVariable Long userId, @PathVariable Long libraryId) {
+        allContentsService.deleteContentsLibrary(userId, libraryId);
+
+        return ResponseEntity.noContent().build();
+    }
+
+    @Operation(summary = "콘텐츠 삭제", description = "콘텐츠를 삭제 한다")
+    @DeleteMapping("/contents/{contentType}/{contentId}")
+    public ResponseEntity<?> deleteContent(@PathVariable String contentType, @PathVariable Long contentId) {
+        allContentsService.deleteContents(contentType, contentId);
+
+        return ResponseEntity.noContent().build();
+    }
 }
