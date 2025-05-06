@@ -290,6 +290,7 @@ public class AllContentsService {
                 .map(item -> {
                     UserLibraryResponse response = new UserLibraryResponse();
 
+                    response.setLibraryId(item.getId());
                     response.setContentType(item.getContentsType());
                     response.setTitle(item.getTitle());
                     response.setUploadDate(item.getDate());
@@ -320,6 +321,34 @@ public class AllContentsService {
             if (byId.isEmpty()) throw new IllegalStateException("Text content not in DB");
 
             return Paths.get(byId.get().getFilePath());
+        }
+    }
+
+    // ContentsLibrary 삭제
+    @Transactional
+    public void deleteContentsLibrary(Long userId, Long libraryId) {
+        ContentsLibrary library = contentsLibraryRepository.findByIdAndUsers_Id(libraryId, userId)
+                .orElseThrow(() -> new IllegalStateException("User Library not in DB"));
+
+        contentsLibraryRepository.delete(library);
+    }
+
+    @Transactional
+    public void deleteContents(String contentType, Long contentId) {
+        if (contentType.equalsIgnoreCase("video")) {
+            // TextTime 삭제
+            textTimeRepository.deleteAllByVideoContents_Id(contentId);
+
+            // VideoContents 삭제
+            videoContentsRepository.deleteById(contentId);
+        } else if (contentType.equalsIgnoreCase("text")) {
+            // TextTime 삭제
+            textTimeRepository.deleteAllByTextContents_Id(contentId);
+
+            // TextContents 삭제
+            textContentsRepository.deleteById(contentId);
+        } else {
+            throw new IllegalStateException("Not Matching Content ID");
         }
     }
 

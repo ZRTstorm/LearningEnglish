@@ -13,4 +13,7 @@ public interface ContentsLibraryRepository extends JpaRepository<ContentsLibrary
 
     // Title 과 일치 하는 ContentsLibrary 조회
     Optional<ContentsLibrary> findByTitle(String title);
+
+    // 엔티티 삭제
+    Optional<ContentsLibrary> findByIdAndUsers_Id(Long libraryId, Long userId);
 }

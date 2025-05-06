@@ -10,6 +10,9 @@ import java.time.LocalDateTime;
 @Setter
 @NoArgsConstructor
 public class UserLibraryResponse {
+    // Id
+    private Long libraryId;
+
     // Content Id
     private String contentType;
     private Long contentId;
