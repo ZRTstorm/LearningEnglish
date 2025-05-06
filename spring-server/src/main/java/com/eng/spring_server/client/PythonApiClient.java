@@ -14,7 +14,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class PythonApiClient {
 
-    private final WebClient webClient = WebClient.create("http://fastapi-app:8000");
+    private final WebClient webClient = WebClient.create("http://54.252.44.80:8000");
 
     public AllContentsResponse requestVideoContents(String url) {
         return webClient.get()
