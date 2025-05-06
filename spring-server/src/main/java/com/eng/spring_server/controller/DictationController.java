@@ -1,5 +1,6 @@
 package com.eng.spring_server.controller;
 
+import com.eng.spring_server.domain.enums.SentenceType;
 import com.eng.spring_server.dto.*;
 import com.eng.spring_server.service.DictationService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -16,16 +17,20 @@ public class DictationController {
 
     private final DictationService dictationService;
 
-    @Operation(summary = "요약 문장에 대한 mp3 경로 반환", description = "해당하는 요약 문장에 대해서 미국/영국/호주 발음 mp3파일 경로를 제공")
+    @Operation(summary = "요약 문장에 대한 mp3 경로 반환", description = "해당 요약 문장에 대해 미국/영국/호주 발음 mp3 경로를 반환합니다.")
     @PostMapping("/summary/audio")
-    public ResponseEntity<String> summaryTts(@RequestBody DictationRequestDto dto) {
-        return ResponseEntity.ok(dictationService.generateTtsAudio(dto.getSentenceId(), "summary"));
+    public ResponseEntity<TtsAudioResponseDto> summaryTts(@RequestBody DictationRequestDto dto) {
+        return ResponseEntity.ok(
+                dictationService.handleTtsRequest(dto.getSentenceId(), SentenceType.SUMMARY)
+        );
     }
 
-    @Operation(summary = "중요 문장에 대한 mp3 경로 반환", description = "해당하는 중요 문장에 대해서 미국/영국/호주 발음 mp3파일 경로를 제공")
+    @Operation(summary = "중요 문장에 대한 mp3 경로 반환", description = "해당 중요 문장에 대해 미국/영국/호주 발음 mp3 경로를 반환합니다.")
     @PostMapping("/important/audio")
-    public ResponseEntity<String> importantTts(@RequestBody DictationRequestDto dto) {
-        return ResponseEntity.ok(dictationService.generateTtsAudio(dto.getSentenceId(), "important"));
+    public ResponseEntity<TtsAudioResponseDto> importantTts(@RequestBody DictationRequestDto dto) {
+        return ResponseEntity.ok(
+                dictationService.handleTtsRequest(dto.getSentenceId(), SentenceType.IMPORTANT)
+        );
     }
 
     @Operation(summary = "요약 문장에 대한 받아쓰기 답안 평가", description = "사용자가 쓴 답안에 대해 평가를 반환합니다.")
