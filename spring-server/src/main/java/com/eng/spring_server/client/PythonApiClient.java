@@ -14,7 +14,10 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class PythonApiClient {
 
-    private final WebClient webClient = WebClient.create("http://fastapi-app:8000");
+    // private final WebClient webClient = WebClient.create("http://fastapi-app:8000");
+
+    WebClient webClient = WebClient.create("http://host.docker.internal:8000");
+
 
     public AllContentsResponse requestVideoContents(String url) {
         return webClient.get()
@@ -69,7 +72,7 @@ public class PythonApiClient {
 
     public String requestTts(String text) {
         return webClient.post()
-                .uri("/text_to_speech")
+                .uri("/audio/text_to_speech")
                 .bodyValue(Map.of("text", text))
                 .retrieve()
                 .bodyToMono(String.class)
@@ -78,7 +81,7 @@ public class PythonApiClient {
 
     public MultiTtsResponse requestMultiTts(String text) {
         return webClient.post()
-                .uri("/text_to_speech_multi")
+                .uri("/audio/text_to_speech")
                 .bodyValue(Map.of("text", text))
                 .retrieve()
                 .bodyToMono(MultiTtsResponse.class)
@@ -88,7 +91,7 @@ public class PythonApiClient {
 
     public DictationEvalResponseDto evaluateDictation(String reference, String userInput) {
         return webClient.post()
-                .uri("/text_grade")
+                .uri("/audio/text_grade")
                 .bodyValue(Map.of("reference", reference, "hypothesis", userInput))
                 .retrieve()
                 .bodyToMono(DictationEvalResponseDto.class)
