@@ -26,4 +26,9 @@ public interface SentenceRepository extends JpaRepository<Sentence, Long> {
             "where s.contentType = :contentType and s.contentId = :contentId " +
             "order by s.textOrder asc")
     List<TimestampDto> findSentencesByContents(@Param("contentType") String contentType, @Param("contentId") Long contentId);
+
+    @Query("SELECT s.id FROM Sentence s WHERE LOWER(s.contentType) = LOWER(:contentType) AND s.contentId = :contentId")
+    List<Long> findIdsByContentTypeAndContentId(@Param("contentType") String contentType, @Param("contentId") Long contentId);
+
+
 }

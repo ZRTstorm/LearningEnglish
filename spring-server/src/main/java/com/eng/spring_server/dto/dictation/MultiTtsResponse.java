@@ -1,14 +1,15 @@
-package com.eng.spring_server.dto;
+package com.eng.spring_server.dto.dictation;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
 public class MultiTtsResponse {
-    private String us;
-    private String gb;
-    private String au;
+    private double grade;
+    private List<TtsSentenceItemDto> contents;
 }

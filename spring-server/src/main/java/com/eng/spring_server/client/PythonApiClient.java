@@ -1,6 +1,8 @@
 package com.eng.spring_server.client;
 
 import com.eng.spring_server.dto.*;
+import com.eng.spring_server.dto.dictation.DictationEvalResponseDto;
+import com.eng.spring_server.dto.dictation.MultiTtsResponse;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -79,14 +81,18 @@ public class PythonApiClient {
                 .block();
     }
 
-    public MultiTtsResponse requestMultiTts(String text) {
-        return webClient.post()
-                .uri("/audio/text_to_speech")
-                .bodyValue(Map.of("text", text))
+    public MultiTtsResponse requestMultiTts(String text, String fileName) {
+        return webClient.get()
+                .uri(uriBuilder -> uriBuilder
+                        .path("/audio/text_to_speech")
+                        .queryParam("text", text)
+                        .queryParam("file_name", fileName)
+                        .build())
                 .retrieve()
                 .bodyToMono(MultiTtsResponse.class)
                 .block();
     }
+
 
 
     public DictationEvalResponseDto evaluateDictation(String reference, String userInput) {

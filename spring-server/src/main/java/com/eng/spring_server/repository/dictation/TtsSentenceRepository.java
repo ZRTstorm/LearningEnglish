@@ -1,4 +1,4 @@
-package com.eng.spring_server.repository;
+package com.eng.spring_server.repository.dictation;
 
 import com.eng.spring_server.domain.contents.TtsSentence;
 import com.eng.spring_server.domain.enums.SentenceType;

@@ -1,4 +1,4 @@
-package com.eng.spring_server.dto;
+package com.eng.spring_server.dto.dictation;
 
 import lombok.Getter;
 

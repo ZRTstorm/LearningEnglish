@@ -2,6 +2,8 @@ package com.eng.spring_server.repository;
 
 import com.eng.spring_server.domain.contents.Summarization;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 import java.util.Optional;
@@ -15,5 +17,9 @@ public interface SummarizationRepository extends JpaRepository<Summarization, Lo
     List<Summarization> findAllByContentTypeAndContentIdOrderByIdAsc(String contentType, Long contentId);
 
     List<Summarization> findAllByContentTypeAndContentId(String contentType, Long contentId);
+
+    @Query("SELECT s.id FROM Summarization s WHERE LOWER(s.contentType) = LOWER(:contentType) AND s.contentId = :contentId")
+    List<Long> findIdsByContentTypeAndContentId(@Param("contentType") String contentType, @Param("contentId") Long contentId);
+
 
 }

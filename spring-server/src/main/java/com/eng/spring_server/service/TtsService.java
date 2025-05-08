@@ -3,7 +3,6 @@ package com.eng.spring_server.service;
 import com.eng.spring_server.client.PythonApiClient;
 import com.eng.spring_server.domain.contents.Sentence;
 import com.eng.spring_server.domain.contents.Summarization;
-import com.eng.spring_server.dto.DictationRequestDto;
 import com.eng.spring_server.repository.SentenceRepository;
 import com.eng.spring_server.repository.SummarizationRepository;
 import lombok.RequiredArgsConstructor;
