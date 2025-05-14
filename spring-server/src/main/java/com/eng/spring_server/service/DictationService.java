@@ -27,6 +27,7 @@ public class DictationService {
     private final PythonApiClient pythonApiClient;
     private final TextOperationService textOperationService;
     private final TtsSentenceRepository ttsSentenceRepository;
+    private final TtsService ttsService;
 
 
     public DictationEvalResponseDto evaluateDictation(DictationEvalRequestDto dto) {
@@ -73,44 +74,28 @@ public class DictationService {
         Long randomSentenceId = candidateIds.get(new Random().nextInt(candidateIds.size()));
         SentenceType sentenceType = SentenceType.valueOf(dto.getSentenceType().toUpperCase());
 
+        // TTS가 이미 존재하는지 확인
         Optional<TtsSentence> existing = ttsSentenceRepository.findBySentenceIdAndSentenceType(randomSentenceId, sentenceType);
+        String text = getTextByType(randomSentenceId, dto.getSentenceType());
+
         if (existing.isPresent()) {
             TtsSentence tts = existing.get();
-            String text = getTextByType(randomSentenceId, dto.getSentenceType());
-
             List<TtsSentenceItemDto> contents = List.of(
                     new TtsSentenceItemDto(text, null, null, tts.getFilePathUs(), tts.getFilePathGb(), tts.getFilePathAu())
             );
             return new DictationStartResponseDto(text, randomSentenceId, null, contents);
         }
 
-        String text = getTextByType(randomSentenceId, dto.getSentenceType());
-        String fileName = "sentence-" + randomSentenceId;
-        MultiTtsResponse response = pythonApiClient.requestMultiTts(text, fileName);
+        // 새로 TTS 생성
+        TtsSentence generated = ttsService.generateTtsFiles(randomSentenceId, sentenceType, text);
 
-        if (response == null || response.getContents() == null || response.getContents().isEmpty()) {
-            throw new RuntimeException("TTS 변환 결과가 비어 있습니다. FastAPI 호출은 성공했지만 유효한 음성 데이터를 받지 못했습니다.");
-        }
-
-        TtsSentenceItemDto first = response.getContents().get(0);
-
-        TtsSentence saved = ttsSentenceRepository.save(
-                TtsSentence.builder()
-                        .sentenceId(randomSentenceId)
-                        .sentenceType(sentenceType)
-                        .filePathUs(first.getFilePathUs())
-                        .filePathGb(first.getFilePathGb())
-                        .filePathAu(first.getFilePathAu())
-                        .build()
+        List<TtsSentenceItemDto> contents = List.of(
+                new TtsSentenceItemDto(text, null, null, generated.getFilePathUs(), generated.getFilePathGb(), generated.getFilePathAu())
         );
 
-        List<TtsSentenceItemDto> contents = response.getContents().stream()
-                .map(c -> new TtsSentenceItemDto(c.getText(), c.getStart(), c.getEnd(),
-                        c.getFilePathUs(), c.getFilePathGb(), c.getFilePathAu()))
-                .collect(Collectors.toList());
-
-        return new DictationStartResponseDto(text, randomSentenceId, response.getGrade(), contents);
+        return new DictationStartResponseDto(text, randomSentenceId, null, contents);
     }
+
 
 
     private String getTextByType(Long sentenceId, String sentenceType) {
