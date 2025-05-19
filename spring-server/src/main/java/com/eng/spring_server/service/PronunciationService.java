@@ -8,10 +8,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import javax.sound.sampled.AudioFormat;
-import javax.sound.sampled.AudioInputStream;
-import javax.sound.sampled.AudioSystem;
-import javax.sound.sampled.AudioFileFormat;
+import javax.sound.sampled.*;
 import java.io.*;
 
 @Service
@@ -41,7 +38,7 @@ public class PronunciationService {
         File wavFile;
         if ("mp3".equals(ext)) {
             wavFile = File.createTempFile("converted", ".wav");
-            convertMp3ToWav(inputFile, wavFile); // 내부 변환 로직
+            convertMp3ToWavWithFfmpeg(inputFile, wavFile);
         } else if ("wav".equals(ext)) {
             wavFile = inputFile;
         } else {
@@ -72,25 +69,17 @@ public class PronunciationService {
         }
     }
 
-    // ===========================
-    // MP3 -> WAV 변환 (Java 내장 API 활용)
-    // ===========================
-    private void convertMp3ToWav(File mp3File, File wavFile) throws Exception {
-        try (javax.sound.sampled.AudioInputStream mp3Stream = AudioSystem.getAudioInputStream(mp3File)) {
-            AudioFormat baseFormat = mp3Stream.getFormat();
-            AudioFormat decodedFormat = new AudioFormat(
-                    AudioFormat.Encoding.PCM_SIGNED,
-                    baseFormat.getSampleRate(),
-                    16,
-                    baseFormat.getChannels(),
-                    baseFormat.getChannels() * 2,
-                    baseFormat.getSampleRate(),
-                    false
-            );
-
-            try (javax.sound.sampled.AudioInputStream pcmStream = AudioSystem.getAudioInputStream(decodedFormat, mp3Stream)) {
-                AudioSystem.write(pcmStream, AudioFileFormat.Type.WAVE, wavFile);
-            }
+    // ffmpeg를 사용하여 mp3를 wav로 변환
+    private void convertMp3ToWavWithFfmpeg(File mp3File, File wavFile) throws IOException, InterruptedException {
+        ProcessBuilder pb = new ProcessBuilder(
+                "ffmpeg", "-y", "-i", mp3File.getAbsolutePath(),
+                "-ar", "16000", "-ac", "1", wavFile.getAbsolutePath()
+        );
+        pb.redirectErrorStream(true);
+        Process process = pb.start();
+        int exitCode = process.waitFor();
+        if (exitCode != 0) {
+            throw new RuntimeException("ffmpeg 변환 실패. exit code = " + exitCode);
         }
     }
 }
