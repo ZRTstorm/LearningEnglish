@@ -386,15 +386,17 @@ class MainActivity : ComponentActivity() {
                         BottomBarScreen(navController)
                     }
                     composable(
-                        route = "ocr_result/{title}/{text}",
+                        route = "ocr_result/{userId}/{title}/{text}",
                         arguments = listOf(
+                            navArgument("userId") { type = NavType.StringType },
                             navArgument("title") { type = NavType.StringType },
                             navArgument("text") { type = NavType.StringType }
                         )
                     ) { backStackEntry ->
+                        val userId = backStackEntry.arguments?.getString("userId") ?: ""
                         val extractedTitle = backStackEntry.arguments?.getString("title") ?: ""
                         val extractedText = backStackEntry.arguments?.getString("text") ?: ""
-                        OcrResultScreen(navController, extractedTitle, extractedText)
+                        OcrResultScreen(navController, userId, extractedTitle, extractedText)
                     }
                     composable("videodetail/{id}") { backStackEntry ->
                         val contentId = backStackEntry.arguments?.getString("id")?.toIntOrNull() ?: return@composable

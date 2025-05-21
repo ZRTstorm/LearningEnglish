@@ -40,7 +40,9 @@ import androidx.compose.ui.res.painterResource
 import com.example.learningenglish.R
 import com.example.learningenglish.data.util.recognizeTextFromBitmap
 import com.example.learningenglish.data.util.uriToBitmap
+import com.example.learningenglish.ui.auth.UserPreferencesDataStore
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 
 
@@ -76,8 +78,11 @@ fun ImageUploadScreen(
                 val joinedText = texts.joinToString("\n")
                 val encodedText = Uri.encode(joinedText)
                 val encodedTitle = Uri.encode(title)
+                val userPrefs = UserPreferencesDataStore(context)
+                val userId = userPrefs.getUserId().firstOrNull()
+
                 // 필요 시 texts를 서버로 전송하거나 화면에 표시
-                navController.navigate("ocr_result/$encodedTitle/$encodedText")
+                navController.navigate("ocr_result/$userId/$encodedTitle/$encodedText")
 
             }
         }

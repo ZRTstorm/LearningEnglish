@@ -56,22 +56,6 @@ class LearningViewModel(
         }
     }
 
-    /*
-    fun loadContent(contentId: String) {
-        viewModelScope.launch {
-            when (val result = LearningRepository().fetchLearningContent(contentId)) {
-                is Resource.Success -> {
-                    _learningContent.value = result.data
-                    _errorMessage.value = null
-                }
-                is Resource.Error -> {
-                    _learningContent.value = null
-                    _errorMessage.value = result.message
-                }
-            }
-        }
-    }*/
-
     fun loadLibraryForUser(userId: String) {
         viewModelScope.launch {
             val result = repository.getLibraryForUser(userId)
@@ -168,7 +152,13 @@ class LearningViewModel(
         }
     }
 
-    fun submitOcrText(text: String, title: String, userId: String, onSuccess: () -> Unit, onError: (String) -> Unit) {
+    fun submitOcrText(
+        text: String,
+        title: String,
+        userId: String,
+        onSuccess: () -> Unit,
+        onError: (String) -> Unit
+    ) {
         viewModelScope.launch {
             try {
                 val data = OcrUploadRequest(text, title, userId)

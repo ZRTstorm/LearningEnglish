@@ -12,6 +12,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.learningenglish.data.repository.LearningRepository
+import com.example.learningenglish.data.repository.WordRepository
 import com.example.learningenglish.ui.auth.UserPreferencesDataStore
 import com.example.learningenglish.viewmodel.LearningViewModel
 import com.example.learningenglish.viewmodel.LearningViewModelFactory
@@ -20,13 +21,18 @@ import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun OcrResultScreen(navController: NavController, extractedTitle: String, extractedText: String) {
+fun OcrResultScreen(navController: NavController, userId: String?, extractedTitle: String, extractedText: String) {
     val context = LocalContext.current
     val userPrefs = remember { UserPreferencesDataStore(context) }
     val coroutineScope = rememberCoroutineScope()
+    val learningRepository = LearningRepository()
+    val wordRepository = WordRepository(context, userPrefs)
+
     val viewModel: LearningViewModel = viewModel(factory = LearningViewModelFactory(
-        LearningRepository(repositoryW)
-    ))
+            repository = learningRepository,
+            repositoryW = wordRepository
+        )
+    )
     var isSubmitting by remember { mutableStateOf(false) }
 
     Scaffold(
@@ -56,13 +62,13 @@ fun OcrResultScreen(navController: NavController, extractedTitle: String, extrac
             Button(
                 onClick = {
                     coroutineScope.launch {
-                        val uid = userPrefs.getUserId().firstOrNull()
-                        if (uid != null) {
+                        //val uid = userPrefs.getUserId().firstOrNull()
+                        if (userId != null) {
                             isSubmitting = true
                             viewModel.submitOcrText(
                                 text = extractedText,
                                 title = extractedTitle,
-                                userId = uid, // 서버가 Int 타입 받는다면
+                                userId = userId,
                                 onSuccess = {
                                     Toast.makeText(context, "OCR 등록 성공!", Toast.LENGTH_SHORT).show()
                                     navController.navigate("library")

@@ -60,27 +60,6 @@ class LearningRepository {
     suspend fun uploadTextContent(data: OcrUploadRequest): Response<LearningResponse> {
         return RetrofitInstance.api.uploadTextOcr(data)
     }
-
-
-    /*
-    suspend fun getWordDetail(word: String): WordDetailResponse? {
-        return try {
-            api.getWordDetail(word)
-        } catch (e: Exception) {
-            null
-        }
-    }
-
-    suspend fun addToVocab(word: String, uid: String) {
-        try {
-            val body = mapOf(
-                "word" to word,
-                "uid" to uid
-            )
-            api.addToVocab(body)
-        } catch (_: Exception) { }
-    }
-     */
 }
 
 class WordRepository(context: Context, userPrefs: UserPreferencesDataStore) {
