@@ -11,6 +11,5 @@ import java.util.List;
 public class DictationStartResponseDto {
     private String text;
     private Long sentenceId;
-    private Double grade;
     private List<TtsSentenceItemDto> contents;
 }

@@ -9,8 +9,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class TtsSentenceItemDto {
     private String text;
-    private Double start;
-    private Double end;
     private String filePathUs;
     private String filePathGb;
     private String filePathAu;

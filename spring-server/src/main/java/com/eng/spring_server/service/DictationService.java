@@ -133,19 +133,22 @@ public class DictationService {
         if (existing.isPresent()) {
             TtsSentence tts = existing.get();
             List<TtsSentenceItemDto> contents = List.of(
-                    new TtsSentenceItemDto(text, null, null, tts.getFilePathUs(), tts.getFilePathGb(), tts.getFilePathAu())
+                    new TtsSentenceItemDto(text, tts.getFilePathUs(), tts.getFilePathGb(), tts.getFilePathAu())
             );
-            return new DictationStartResponseDto(text, randomSentenceId, null, contents);
+            return new DictationStartResponseDto(text, randomSentenceId, contents);
         }
 
         // 새로 TTS 생성
         TtsSentence generated = ttsService.generateTtsFiles(randomSentenceId, sentenceType, text);
 
         List<TtsSentenceItemDto> contents = List.of(
-                new TtsSentenceItemDto(text, null, null, generated.getFilePathUs(), generated.getFilePathGb(), generated.getFilePathAu())
+                new TtsSentenceItemDto(text,
+                        "http://54.252.44.80:8080/"+generated.getFilePathUs(),
+                        "http://54.252.44.80:8080/"+generated.getFilePathGb(),
+                        "http://54.252.44.80:8080/"+generated.getFilePathAu())
         );
 
-        return new DictationStartResponseDto(text, randomSentenceId, null, contents);
+        return new DictationStartResponseDto(text, randomSentenceId, contents);
     }
 
 

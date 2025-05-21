@@ -23,7 +23,7 @@ public class TtsService {
     private final TtsSentenceRepository ttsSentenceRepository;
 
     public TtsSentence generateTtsFiles(Long sentenceId, SentenceType sentenceType, String text) {
-        String baseFileName = "sentence-" + sentenceId;
+        String baseFileName = "sentence-" + sentenceType + sentenceId;
         String usPath = synthesize(text, baseFileName + "_us", "en-US");
         String gbPath = synthesize(text, baseFileName + "_gb", "en-GB");
         String auPath = synthesize(text, baseFileName + "_au", "en-AU");
