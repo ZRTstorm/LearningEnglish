@@ -1,20 +1,17 @@
 package com.eng.spring_server.dto.Pronunciation;
 
+
+import lombok.*;
+import org.checkerframework.checker.units.qual.N;
+
+@Data
+@Getter @Setter
+@NoArgsConstructor
+@AllArgsConstructor
 public class PronunciationEvalResponseDto {
     private double accuracy;
     private double fluency;
     private double completeness;
     private double pronunciation;
-
-    public PronunciationEvalResponseDto(double accuracy, double fluency, double completeness, double pronunciation) {
-        this.accuracy = accuracy;
-        this.fluency = fluency;
-        this.completeness = completeness;
-        this.pronunciation = pronunciation;
-    }
-
-    public double getAccuracy() { return accuracy; }
-    public double getFluency() { return fluency; }
-    public double getCompleteness() { return completeness; }
-    public double getPronunciation() { return pronunciation; }
+    private String FeedbackMessage;
 }
