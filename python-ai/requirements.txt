@@ -18,3 +18,4 @@ yt_dlp==2025.3.31
 uvicorn==0.22.0
 webvtt-py
 google-cloud-texttospeech
+pron-difficulty

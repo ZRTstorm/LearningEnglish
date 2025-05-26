@@ -1,6 +1,7 @@
 from fastapi import APIRouter
 from app.modules import audio_downloader
 from app.modules import audio_segment
+from app.modules import sentence_level
 from app.service import ocr_operating
 from app.service import text_operating
 from app.service import text_translating
@@ -77,5 +78,13 @@ def summarize_text(path: str):
     try:
         text_operating.text_summarization(path)
         return {"status": "success"}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+@router.get("/sentence_level")
+def sentence_leveling(path: str):
+    try:
+        level = sentence_level.level_detection(path)
+        return {"status": "success", "level": level}
     except Exception as e:
         return {"status": "error", "message": str(e)}
