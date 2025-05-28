@@ -93,8 +93,6 @@ public class PythonApiClient {
                 .block();
     }
 
-
-
     public DictationEvalResponseDto evaluateDictation(String reference, String userInput) {
         return webClient.post()
                 .uri("/audio/text_grade")
@@ -102,6 +100,18 @@ public class PythonApiClient {
                 .retrieve()
                 .bodyToMono(DictationEvalResponseDto.class)
                 .block();
+    }
+
+    public float sentenceSpeechGrade(String text) {
+        return webClient.get()
+                .uri(uriBuilder -> uriBuilder
+                        .path("/contents/speech_grade")
+                        .queryParam("text", text)
+                        .build())
+                .retrieve()
+                .bodyToMono(SpeechGradeWrapper.class)
+                .block()
+                .getGrade();
     }
 
     @Getter
@@ -125,5 +135,11 @@ public class PythonApiClient {
     private static class SummaTextDtoWrapper {
         private String status;
         private SummaTextDto content;
+    }
+
+    @Getter
+    private static class SpeechGradeWrapper {
+        private String status;
+        private float grade;
     }
 }

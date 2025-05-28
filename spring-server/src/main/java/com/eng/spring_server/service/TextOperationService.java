@@ -29,6 +29,7 @@ public class TextOperationService {
     private final VideoContentsRepository videoContentsRepository;
     private final TextContentsRepository textContentsRepository;
     private final TextTimeRepository textTimeRepository;
+    private final SentenceLevelRepository sentenceLevelRepository;
 
     @Transactional
     public void getImportant(ContentIdDto request) {
@@ -112,6 +113,25 @@ public class TextOperationService {
         }
 
         summarizationRepository.saveAll(summarizes);
+    }
+
+    @Transactional
+    public void textSpeechLevel(ContentIdDto request) {
+        List<Sentence> sentenceList = sentenceRepository.findAllByContentTypeAndContentId(request.getContentType(), request.getContentId());
+
+        Optional<SentenceLevel> levelOpt = sentenceLevelRepository.findBySentence(sentenceList.get(0));
+        if (levelOpt.isPresent()) throw new IllegalStateException("Already Level in DB");
+
+        for (Sentence sentence : sentenceList) {
+            String text = sentence.getText();
+            float speechGrade = pythonApiClient.sentenceSpeechGrade(text);
+
+            SentenceLevel sentenceLevel = new SentenceLevel();
+            sentenceLevel.setSentence(sentence);
+            sentenceLevel.setSpeechGrade(speechGrade);
+
+            sentenceLevelRepository.save(sentenceLevel);
+        }
     }
 
     @Transactional(readOnly = true)

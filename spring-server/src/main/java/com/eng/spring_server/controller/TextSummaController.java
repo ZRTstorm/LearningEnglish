@@ -39,6 +39,14 @@ public class TextSummaController {
         return ResponseEntity.status(HttpStatus.OK).body("Summarize Success");
     }
 
+    @Operation(summary = "문장 발음 난이도 생성", description = "콘텐츠 각 문장의 발음 난이도를 측정 한다")
+    @PostMapping("/speech_level")
+    public ResponseEntity<?> speechLeveling(@RequestBody ContentIdDto request) {
+        textOperationService.textSpeechLevel(request);
+
+        return ResponseEntity.status(HttpStatus.OK).body("Sentence SpeechGrade Success");
+    }
+
     @Operation(summary = "텍스트 중요 문장 리스트 조회", description = "콘텐츠에서 중요 문장 리스트를 조회 한다")
     @GetMapping("/important/{contentsType}/{contentId}")
     public ResponseEntity<?> listImportant(@PathVariable String contentsType, @PathVariable Long contentId) {

@@ -11,11 +11,13 @@ def level_detection(sentence: str):
         return 0.0
 
     scores = evaluator.evaluate_batch(words, "en")
-    for word, score in zip(words, scores):
-        print(f"{word}: {round(score, 2)}")
+    word_score_pairs = list(zip(words, scores))
 
-    avg_score = sum(scores) / len(scores)
-    max_score = max(scores)
+    top_pairs = sorted(word_score_pairs, key=lambda x: x[1], reverse=True)[:10]
+    top_scores = [s for _, s in top_pairs]
+
+    avg_score = sum(top_scores) / len(top_scores)
+    max_score = max(top_scores)
 
     base_score = ALPHA * avg_score + (1 - ALPHA) * max_score
     return round(min(base_score, 1.0), 2)
