@@ -25,6 +25,4 @@ public class Sentence {
     // sentence Text
     @Column(columnDefinition = "TEXT")
     private String text;
-
-
 }
