@@ -1,24 +1,16 @@
 package com.eng.spring_server.service;
 
-import com.eng.spring_server.domain.contents.Sentence;
-import com.eng.spring_server.domain.contents.TextContents;
-import com.eng.spring_server.domain.contents.TextTime;
-import com.eng.spring_server.domain.contents.VideoContents;
+import com.eng.spring_server.domain.contents.*;
 import com.eng.spring_server.dto.ContentIdDto;
 import com.eng.spring_server.dto.InsertionQuizDto;
-import com.eng.spring_server.repository.SentenceRepository;
-import com.eng.spring_server.repository.TextContentsRepository;
-import com.eng.spring_server.repository.TextTimeRepository;
-import com.eng.spring_server.repository.VideoContentsRepository;
+import com.eng.spring_server.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -26,6 +18,7 @@ import java.util.Optional;
 public class QuizService {
 
     private final SentenceRepository sentenceRepository;
+    private final SummarizationRepository summarizationRepository;
     private final VideoContentsRepository videoContentsRepository;
     private final TextContentsRepository textContentsRepository;
     private final TextTimeRepository textTimeRepository;
@@ -76,6 +69,35 @@ public class QuizService {
         dto.setInsertNumList(insertNums);
 
         return dto;
+    }
+
+    @Transactional(readOnly = true)
+    public List<String> summaOrderQuiz(String contentType, Long contentId) {
+        List<Summarization> summaList = summarizationRepository.findAllByContentTypeAndContentIdOrderByIdAsc(contentType, contentId);
+
+        List<String> summaTextList = summaList.stream()
+                .map(Summarization::getText)
+                .toList();
+
+        int size = summaTextList.size();
+        int num = 5;
+        if (num >= size) {
+            return new ArrayList<>(summaTextList);
+        }
+
+        List<String> selected = new ArrayList<>();
+        double interval = (double) size / num;
+
+        for (int i = 0; i < num; i++) {
+            int start = (int) Math.floor(i * interval);
+            int end = (int) Math.floor((i+1) * interval);
+            if (end > size) end = size;
+
+            int index = start + new Random().nextInt(Math.max(1, end - start));
+            selected.add(summaTextList.get(index));
+        }
+
+        return selected;
     }
 
     private List<Integer> shuffleNumber(int num, int item) {
