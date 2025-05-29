@@ -31,4 +31,9 @@ public interface SentenceRepository extends JpaRepository<Sentence, Long> {
     List<Long> findIdsByContentTypeAndContentId(@Param("contentType") String contentType, @Param("contentId") Long contentId);
 
 
+    @Query("SELECT s FROM Sentence s " +
+            "WHERE s.contentId = :contentId AND s.contentType = :contentType " +
+            "ORDER BY s.lastAccessedAt ASC NULLS FIRST")
+    List<Sentence> findByContentAndTypeOrderByLastAccessed(@Param("contentId") Long contentId,
+                                                           @Param("contentType") String contentType);
 }

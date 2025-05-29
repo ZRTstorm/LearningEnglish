@@ -12,4 +12,5 @@ public class DictationStartResponseDto {
     private String text;
     private Long sentenceId;
     private List<TtsSentenceItemDto> contents;
+    private float sentenceLevel;
 }

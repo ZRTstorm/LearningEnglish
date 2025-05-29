@@ -2,32 +2,21 @@ package com.eng.spring_server.service;
 
 import com.eng.spring_server.client.PythonApiClient;
 import com.eng.spring_server.domain.contents.Sentence;
-import com.eng.spring_server.domain.contents.Summarization;
 import com.eng.spring_server.domain.contents.TtsSentence;
 import com.eng.spring_server.domain.enums.SentenceType;
-import com.eng.spring_server.dto.*;
 import com.eng.spring_server.dto.dictation.*;
 import com.eng.spring_server.repository.SentenceRepository;
 import com.eng.spring_server.repository.SummarizationRepository;
 import com.eng.spring_server.repository.dictation.TtsSentenceRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
-import org.springframework.http.*;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.languagetool.JLanguageTool;
 import org.languagetool.language.AmericanEnglish;
 import org.languagetool.rules.RuleMatch;
 
-
 import java.io.IOException;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.Random;
+import java.time.LocalDateTime;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -40,7 +29,6 @@ public class DictationService {
     private final TextOperationService textOperationService;
     private final TtsSentenceRepository ttsSentenceRepository;
     private final TtsService ttsService;
-
 
     public DictationEvalResponseDto evaluateDictation(DictationEvalRequestDto dto) {
         String reference;
@@ -77,10 +65,8 @@ public class DictationService {
         return new DictationEvalResponseDto(reference, userInput, accuracyScore, editDistance, incorrectWords, feedbackMessages);
     }
 
-
     private int calculateEditDistance(String ref, String user) {
         int[][] dp = new int[ref.length() + 1][user.length() + 1];
-
         for (int i = 0; i <= ref.length(); i++) {
             for (int j = 0; j <= user.length(); j++) {
                 if (i == 0) {
@@ -97,7 +83,6 @@ public class DictationService {
                 }
             }
         }
-
         return dp[ref.length()][user.length()];
     }
 
@@ -107,66 +92,55 @@ public class DictationService {
         return maxLen == 0 ? 100.0 : (1 - ((double) editDist / maxLen)) * 100;
     }
 
-
     public DictationStartResponseDto getRandomDictationSentence(DictationStartRequestDto dto) {
-        List<Long> candidateIds;
+        List<Sentence> candidates = sentenceRepository
+                .findByContentAndTypeOrderByLastAccessed(dto.getContentId(), dto.getContentType());
 
-        if ("summary".equalsIgnoreCase(dto.getSentenceType())) {
-            candidateIds = summarizationRepository.findIdsByContentTypeAndContentId(
-                    dto.getContentType(), dto.getContentId());
-        } else {
-            candidateIds = sentenceRepository.findIdsByContentTypeAndContentId(
-                    dto.getContentType(), dto.getContentId());
-        }
-
-        if (candidateIds == null || candidateIds.isEmpty()) {
+        if (candidates.isEmpty()) {
             throw new RuntimeException("해당 콘텐츠에 문장이 존재하지 않습니다.");
         }
 
-        Long randomSentenceId = candidateIds.get(new Random().nextInt(candidateIds.size()));
-        SentenceType sentenceType = SentenceType.valueOf(dto.getSentenceType().toUpperCase());
+        double normalizedTarget = dto.getSentenceLevel() / 100.0;
 
-        // TTS가 이미 존재하는지 확인
-        Optional<TtsSentence> existing = ttsSentenceRepository.findBySentenceIdAndSentenceType(randomSentenceId, sentenceType);
-        String text = getTextByType(randomSentenceId, dto.getSentenceType());
+        List<Sentence> nearest = candidates.stream()
+                .filter(s -> s.getSentenceLevel() != null)
+                .filter(s -> s.getSentenceLevel().getSpeechGrade() >= 0.0f)
+                .sorted(Comparator.comparingDouble(s ->
+                        Math.abs(s.getSentenceLevel().getSpeechGrade() - normalizedTarget)))
+                .limit(4)
+                .collect(Collectors.toList());
+
+        if (nearest.isEmpty()) {
+            throw new RuntimeException("조건에 맞는 문장을 찾을 수 없습니다.");
+        }
+
+        Sentence selected = nearest.get(new Random().nextInt(nearest.size()));
+        selected.setLastAccessedAt(LocalDateTime.now());
+        sentenceRepository.save(selected);
+
+        String text = selected.getText();
+        SentenceType sentenceType = SentenceType.IMPORTANT;
+
+        Optional<TtsSentence> existing = ttsSentenceRepository.findBySentenceIdAndSentenceType(selected.getId(), sentenceType);
+
+        float level = selected.getSentenceLevel() != null ? selected.getSentenceLevel().getSpeechGrade() * 100f : -1f;
 
         if (existing.isPresent()) {
             TtsSentence tts = existing.get();
             List<TtsSentenceItemDto> contents = List.of(
                     new TtsSentenceItemDto(text, tts.getFilePathUs(), tts.getFilePathGb(), tts.getFilePathAu())
             );
-            return new DictationStartResponseDto(text, randomSentenceId, contents);
+            return new DictationStartResponseDto(text, selected.getId(), contents, level);
         }
 
-        // 새로 TTS 생성
-        TtsSentence generated = ttsService.generateTtsFiles(randomSentenceId, sentenceType, text);
-
+        TtsSentence generated = ttsService.generateTtsFiles(selected.getId(), sentenceType, text);
         List<TtsSentenceItemDto> contents = List.of(
                 new TtsSentenceItemDto(text,
-                        "http://54.252.44.80:8080/"+generated.getFilePathUs(),
-                        "http://54.252.44.80:8080/"+generated.getFilePathGb(),
-                        "http://54.252.44.80:8080/"+generated.getFilePathAu())
+                        "http://54.252.44.80:8080/" + generated.getFilePathUs(),
+                        "http://54.252.44.80:8080/" + generated.getFilePathGb(),
+                        "http://54.252.44.80:8080/" + generated.getFilePathAu())
         );
 
-        return new DictationStartResponseDto(text, randomSentenceId, contents);
+        return new DictationStartResponseDto(text, selected.getId(), contents, level);
     }
-
-
-
-    private String getTextByType(Long sentenceId, String sentenceType) {
-        if ("summary".equalsIgnoreCase(sentenceType)) {
-            return summarizationRepository.findById(sentenceId)
-                    .orElseThrow(() -> new RuntimeException("요약문장이 존재하지 않습니다."))
-                    .getText();
-        } else {
-            return sentenceRepository.findById(sentenceId)
-                    .orElseThrow(() -> new RuntimeException("중요문장이 존재하지 않습니다."))
-                    .getText();
-        }
-    }
-
-
-
-
-
 }

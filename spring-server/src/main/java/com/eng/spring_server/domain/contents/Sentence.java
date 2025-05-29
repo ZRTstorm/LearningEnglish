@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.time.LocalDateTime;
+
 @Entity
 @Getter @Setter
 public class Sentence {
@@ -25,4 +27,10 @@ public class Sentence {
     // sentence Text
     @Column(columnDefinition = "TEXT")
     private String text;
+
+    @Column(name = "last_accessed_at")
+    private LocalDateTime lastAccessedAt;
+
+    @OneToOne(mappedBy = "sentence", fetch = FetchType.LAZY)
+    private SentenceLevel sentenceLevel;
 }
