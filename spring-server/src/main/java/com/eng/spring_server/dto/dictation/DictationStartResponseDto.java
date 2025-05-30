@@ -13,4 +13,5 @@ public class DictationStartResponseDto {
     private Long sentenceId;
     private List<TtsSentenceItemDto> contents;
     private float sentenceLevel;
+    private Long contentsLibraryId;
 }
