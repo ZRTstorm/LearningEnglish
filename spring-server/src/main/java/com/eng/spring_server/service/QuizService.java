@@ -1,15 +1,14 @@
 package com.eng.spring_server.service;
 
 import com.eng.spring_server.domain.contents.*;
-import com.eng.spring_server.dto.ContentIdDto;
-import com.eng.spring_server.dto.IndexedText;
-import com.eng.spring_server.dto.InsertionQuizDto;
+import com.eng.spring_server.dto.*;
 import com.eng.spring_server.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -24,6 +23,7 @@ public class QuizService {
     private final TextContentsRepository textContentsRepository;
     private final TextTimeRepository textTimeRepository;
     private final QuizDataRepository quizDataRepository;
+    private final ContentsLibraryRepository contentsLibraryRepository;
 
     @Transactional(readOnly = true)
     public InsertionQuizDto sentenceInsertionQuiz(ContentIdDto request) {
@@ -115,12 +115,93 @@ public class QuizService {
         quizData.setOriginalData(originalData);
         quizData.setUserData(userData);
         quizData.setScore(score);
+        quizData.setDate(LocalDateTime.now());
 
         quizDataRepository.save(quizData);
     }
 
+    public InsertionFeedbackDto insertFeedback(Long quizId) {
+        Optional<QuizData> byId = quizDataRepository.findById(quizId);
+        if (byId.isEmpty()) throw new IllegalStateException();
+        QuizData quizData = byId.get();
+
+        Optional<ContentsLibrary> opt = contentsLibraryRepository.findById(quizData.getContentsLibraryId());
+        if (opt.isEmpty()) throw new IllegalStateException();
+        ContentsLibrary contentsLibrary = opt.get();
+
+        List<TextTime> textTimeList = new ArrayList<>();
+        String contentType = null;
+        if (contentsLibrary.getVideoContents() != null) {
+            textTimeList = textTimeRepository.findByVideoContents(contentsLibrary.getVideoContents());
+            contentType = "video";
+        } else {
+            textTimeList = textTimeRepository.findByTextContents(contentsLibrary.getTextContents());
+            contentType = "text";
+        }
+
+        List<String> sentences = new ArrayList<>();
+        for (TextTime tt : textTimeList) {
+            sentences.add(tt.getText());
+        }
+
+        List<Integer> originalList = parsingStr(quizData.getOriginalData());
+        List<Integer> userList = parsingStr(quizData.getUserData());
+
+        InsertionFeedbackDto response = new InsertionFeedbackDto();
+        response.setSentenceList(sentences);
+        response.setOriginalNumList(originalList);
+        response.setUserNumList(userList);
+
+        return response;
+    }
+
+    public IndexedFeedback ordersFeedback(Long quizId) {
+        Optional<QuizData> byId = quizDataRepository.findById(quizId);
+        if (byId.isEmpty()) throw new IllegalStateException();
+        QuizData quizData = byId.get();
+
+        Optional<ContentsLibrary> opt = contentsLibraryRepository.findById(quizData.getContentsLibraryId());
+        if (opt.isEmpty()) throw new IllegalStateException();
+        ContentsLibrary contentsLibrary = opt.get();
+
+        List<Summarization> summaList = null;
+        if (contentsLibrary.getVideoContents() != null) {
+            summaList = summarizationRepository.findAllByContentTypeAndContentId("video", contentsLibrary.getVideoContents().getId());
+        } else {
+            summaList = summarizationRepository.findAllByContentTypeAndContentId("text", contentsLibrary.getTextContents().getId());
+        }
+
+        List<String> summaTextList = summaList.stream()
+                .map(Summarization::getText)
+                .toList();
+
+        List<Integer> originalList = parsingStr(quizData.getOriginalData());
+        List<Integer> userList = parsingStr(quizData.getUserData());
+
+        List<IndexedText> originalText = originalList.stream()
+                .filter(index -> index >= 0 && index < summaTextList.size())
+                .map(index -> new IndexedText(index, summaTextList.get(index)))
+                .toList();
+
+        IndexedFeedback response = new IndexedFeedback();
+        response.setOriginalText(originalText);
+        response.setUserOrders(userList);
+
+        return response;
+    }
+
     public List<QuizData> searchListQuiz(Long libraryId) {
-        return quizDataRepository.searchAllByContentsLibraryId(libraryId);
+        List<QuizData> allList = quizDataRepository.searchAllByContentsLibraryId(libraryId);
+
+        return allList.stream()
+                .collect(Collectors.groupingBy(
+                        QuizData::getOriginalData,
+                        Collectors.maxBy(Comparator.comparingLong(q -> q.getScore() == null ? 0 : q.getScore()))
+                ))
+                .values().stream()
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .collect(Collectors.toList());
     }
 
     private List<Integer> shuffleNumber(int num, int item) {
@@ -132,5 +213,11 @@ public class QuizService {
         Collections.shuffle(numbers);
 
         return numbers.subList(0, item);
+    }
+
+    private List<Integer> parsingStr(String str) {
+        return Arrays.stream(str.split("-"))
+                .map(Integer::parseInt)
+                .collect(Collectors.toList());
     }
 }

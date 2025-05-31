@@ -1,9 +1,7 @@
 package com.eng.spring_server.controller;
 
 import com.eng.spring_server.domain.contents.QuizData;
-import com.eng.spring_server.dto.ContentIdDto;
-import com.eng.spring_server.dto.IndexedText;
-import com.eng.spring_server.dto.InsertionQuizDto;
+import com.eng.spring_server.dto.*;
 import com.eng.spring_server.service.QuizService;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
@@ -55,4 +53,19 @@ public class QuizController {
         return ResponseEntity.status(HttpStatus.OK).body(quizDataList);
     }
 
+    @Operation(summary = "삽입 퀴즈 피드백 제공", description = "사용자가 저장한 퀴즈 피드백을 제공 한다")
+    @GetMapping("/feedback/insertion/{quizId}")
+    public ResponseEntity<?> feedbackInsertion(@PathVariable Long quizId) {
+        InsertionFeedbackDto response = quizService.insertFeedback(quizId);
+
+        return ResponseEntity.status(HttpStatus.OK).body(response);
+    }
+
+    @Operation(summary = "문장 배열 퀴즈 피드백 제공", description = "사용자가 저장한 배열 퀴즈 피드백을 제공 한다")
+    @GetMapping("/feedback/orders/{quizId}")
+    public ResponseEntity<?> feedbackOrders(@PathVariable Long quizId) {
+        IndexedFeedback response = quizService.ordersFeedback(quizId);
+
+        return ResponseEntity.status(HttpStatus.OK).body(response);
+    }
 }

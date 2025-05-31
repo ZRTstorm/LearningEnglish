@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.time.LocalDateTime;
+
 @Entity
 @Getter @Setter
 public class QuizData {
@@ -21,4 +23,6 @@ public class QuizData {
     private String userData;
 
     private Long score;
+
+    private LocalDateTime date;
 }
