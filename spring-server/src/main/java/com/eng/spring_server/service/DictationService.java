@@ -70,33 +70,25 @@ public class DictationService {
 
         Users user = usersRepository.findByUid(dto.getUid())
                 .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
-        Optional<ContentsLibrary> contentsLibraryOpt;
 
+        ContentsLibrary contentsLibrary;
         if ("video".equals(dto.getContentType())) {
-            contentsLibraryOpt = contentsLibraryRepository.findByUsersAndContentsTypeAndVideoContents_Id(
-                    user, "video", dto.getContentId());
+            contentsLibrary = contentsLibraryRepository
+                    .findByUsersAndContentsTypeAndVideoContents_Id(user, "video", dto.getContentId())
+                    .orElseThrow(() -> new RuntimeException("콘텐츠 라이브러리를 찾을 수 없습니다."));
         } else if ("text".equals(dto.getContentType())) {
-            contentsLibraryOpt = contentsLibraryRepository.findByUsersAndContentsTypeAndTextContents_Id(
-                    user, "text", dto.getContentId());
+            contentsLibrary = contentsLibraryRepository
+                    .findByUsersAndContentsTypeAndTextContents_Id(user, "text", dto.getContentId())
+                    .orElseThrow(() -> new RuntimeException("콘텐츠 라이브러리를 찾을 수 없습니다."));
         } else {
-            throw new IllegalArgumentException("잘못된 콘텐츠 타입입니다: " + dto.getContentType());
+            throw new RuntimeException("잘못된 콘텐츠 타입입니다.");
         }
-
-        ContentsLibrary contentsLibrary = contentsLibraryOpt
-                .orElseThrow(() -> new RuntimeException("콘텐츠 라이브러리를 찾을 수 없습니다."));
-
 
         Sentence sentence = sentenceRepository.findById(dto.getSentenceId())
                 .orElseThrow(() -> new RuntimeException("문장을 찾을 수 없습니다."));
+        float level = sentence.getSentenceLevel() != null ? sentence.getSentenceLevel().getSpeechGrade() * 100f : -1f;
 
-        float level = sentence.getSentenceLevel() != null
-                ? sentence.getSentenceLevel().getSpeechGrade() * 100f
-                : -1f;
-
-        Optional<DictationList> existing = dictationListRepository
-                .findBySentenceIdAndContentsLibrary_Id(dto.getSentenceId(), contentsLibrary.getId());
-
-        DictationList dictation = existing.orElseGet(DictationList::new);
+        DictationList dictation = new DictationList();
         dictation.setSentenceId(dto.getSentenceId());
         dictation.setContentsLibrary(contentsLibrary);
         dictation.setSentenceLevel(level);
@@ -109,6 +101,7 @@ public class DictationService {
 
         return new DictationEvalResponseDto(reference, userInput, accuracyScore, editDistance, incorrectWords, feedbackMessages);
     }
+
 
 
 
@@ -192,9 +185,9 @@ public class DictationService {
             TtsSentence generated = ttsService.generateTtsFiles(selected.getId(), sentenceType, text);
             contents = List.of(
                     new TtsSentenceItemDto(text,
-                            "http://54.252.44.80:8080/" + generated.getFilePathUs(),
-                            "http://54.252.44.80:8080/" + generated.getFilePathGb(),
-                            "http://54.252.44.80:8080/" + generated.getFilePathAu())
+                            generated.getFilePathUs(),
+                            generated.getFilePathGb(),
+                            generated.getFilePathAu())
             );
         }
 

@@ -68,7 +68,7 @@ public class TtsService {
                 try (OutputStream out = new FileOutputStream(path)) {
                     out.write(audioContents.toByteArray());
                 }
-                return path;
+                return fileName + ".mp3";
             }
         } catch (Exception e) {
             throw new RuntimeException("TTS 생성 실패 (" + languageCode + "): " + e.getMessage(), e);

@@ -19,7 +19,7 @@ public class AudioStreamController {
 
     @GetMapping("/{filename:.+}")
     public ResponseEntity<Resource> streamAudio(@PathVariable String filename, HttpServletRequest request) {
-        File file = new File(AUDIO_DIR + filename);
+        File file = new File(AUDIO_DIR + "/" + filename);
 
         if (!file.exists()) {
             return ResponseEntity.notFound().build();
