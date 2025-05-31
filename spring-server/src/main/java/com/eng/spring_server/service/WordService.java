@@ -76,37 +76,40 @@ public class WordService {
         return new String[]{null, null};
     }
 
-    public void saveWordForUser(String wordStr, String uid) {
+    public void saveWordForUser(String wordStr, Long userId) { // userId로 변경
         Word word = performDictionarySearch(wordStr);
 
-        Users user = usersRepository.findByUid(uid) //
-                .orElseThrow(() -> new IllegalArgumentException("해당 uid 사용자를 찾을 수 없습니다."));
+        Users user = usersRepository.findById(userId) // findByUid → findById
+                .orElseThrow(() -> new IllegalArgumentException("해당 ID 사용자를 찾을 수 없습니다."));
 
-        userWordRepository.findByUser_IdAndWord_Id(user.getId(), word.getId()) // ✅ userId 기준으로 연결 확인
-                .orElseGet(() -> userWordRepository.save(new UserWord(null, user, word))); // 없으면 저장
+        userWordRepository.findByUser_IdAndWord_Id(user.getId(), word.getId())
+                .orElseGet(() -> userWordRepository.save(new UserWord(null, user, word)));
     }
 
-    public List<Word> getWordsByUser(String uid) {
-        Users user = usersRepository.findByUid(uid) //
-                .orElseThrow(() -> new IllegalArgumentException("해당 uid 사용자를 찾을 수 없습니다."));
+
+    public List<Word> getWordsByUser(Long userId) { // userId로 변경
+        Users user = usersRepository.findById(userId) // findByUid → findById
+                .orElseThrow(() -> new IllegalArgumentException("해당 ID 사용자를 찾을 수 없습니다."));
 
         return userWordRepository.findByUser_Id(user.getId()).stream()
                 .map(UserWord::getWord)
                 .toList();
     }
 
+
     public Word getWordDetail(Long wordId) { //
         return wordRepository.findById(wordId)
                 .orElseThrow(() -> new IllegalArgumentException("해당 단어 없음"));
     }
 
-    public void deleteWordForUser(String uid, Long wordId) {
-        Users user = usersRepository.findByUid(uid) //
-                .orElseThrow(() -> new IllegalArgumentException("해당 uid 사용자를 찾을 수 없습니다."));
+    public void deleteWordForUser(Long userId, Long wordId) { // userId로 변경
+        Users user = usersRepository.findById(userId) // findByUid → findById
+                .orElseThrow(() -> new IllegalArgumentException("해당 ID 사용자를 찾을 수 없습니다."));
 
         userWordRepository.findByUser_IdAndWord_Id(user.getId(), wordId)
                 .ifPresent(userWordRepository::delete);
     }
+
 
     private List<Definition> fetchDefinitionsFromAPI(String word) {
         try {
@@ -165,13 +168,14 @@ public class WordService {
         }
     }
 
-    public List<Word> getPagedWordsByUser(String uid, int page) {
+    public List<Word> getPagedWordsByUser(Long userId, int page) { // userId로 변경
         Pageable pageable = PageRequest.of(page, 10);
-        return userWordRepository.findByUser_Uid(uid, pageable)
+        return userWordRepository.findByUser_Id(userId, pageable) // findByUser_Uid → findByUser_Id
                 .stream()
                 .map(UserWord::getWord)
                 .toList();
     }
+
 
 
     public WordResponse convertToDto(Word word) {

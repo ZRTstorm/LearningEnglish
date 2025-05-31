@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class DictationStartRequestDto {
-    private String uid;
+    private Long userId;
     private Long contentId;
     private String contentType;
     // private String sentenceType;  // "summary" 또는 "important"

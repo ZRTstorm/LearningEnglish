@@ -1,6 +1,20 @@
 package com.eng.spring_server.service;
 
+import com.eng.spring_server.domain.Users;
+import com.eng.spring_server.domain.contents.ContentsLibrary;
+import com.eng.spring_server.domain.contents.Sentence;
+import com.eng.spring_server.domain.contents.TtsSentence;
+import com.eng.spring_server.domain.enums.SentenceType;
+import com.eng.spring_server.domain.pronunciation.PronunciationList;
 import com.eng.spring_server.dto.Pronunciation.PronunciationEvalResponseDto;
+import com.eng.spring_server.dto.Pronunciation.PronunciationStartRequestDto;
+import com.eng.spring_server.dto.Pronunciation.PronunciationStartResponseDto;
+import com.eng.spring_server.dto.dictation.TtsSentenceItemDto;
+import com.eng.spring_server.repository.ContentsLibraryRepository;
+import com.eng.spring_server.repository.SentenceRepository;
+import com.eng.spring_server.repository.UsersRepository;
+import com.eng.spring_server.repository.dictation.TtsSentenceRepository;
+import com.eng.spring_server.repository.pronunciation.PronunciationListRepository;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.microsoft.cognitiveservices.speech.*;
@@ -13,8 +27,9 @@ import org.springframework.web.multipart.MultipartFile;
 
 import javax.sound.sampled.*;
 import java.io.*;
-import java.util.Comparator;
-import java.util.Map;
+import java.time.LocalDateTime;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -26,7 +41,75 @@ public class PronunciationService {
     @Value("${azure.speech.region}")
     private String azureSpeechRegion;
 
-    public PronunciationEvalResponseDto evaluatePronunciation(MultipartFile audioFile, String text) throws Exception {
+    private final SentenceRepository sentenceRepository;
+    private final UsersRepository usersRepository;
+    private final ContentsLibraryRepository contentsLibraryRepository;
+    private final TtsSentenceRepository ttsSentenceRepository;
+    private final TtsService ttsService;
+    private final PronunciationListRepository pronunciationListRepository;
+
+    public PronunciationStartResponseDto getStartSentence(PronunciationStartRequestDto dto) {
+        List<Sentence> candidates = sentenceRepository
+                .findByContentAndTypeOrderByLastAccessed(dto.getContentId(), dto.getContentType());
+
+        if (candidates.isEmpty()) {
+            throw new RuntimeException("해당 콘텐츠에 문장이 존재하지 않습니다.");
+        }
+
+        double normalizedTarget = dto.getSentenceLevel() / 100.0;
+
+        List<Sentence> nearest = candidates.stream()
+                .filter(s -> s.getSentenceLevel() != null)
+                .filter(s -> s.getSentenceLevel().getSpeechGrade() >= 0.0f)
+                .sorted(Comparator.comparingDouble(s ->
+                        Math.abs(s.getSentenceLevel().getSpeechGrade() - normalizedTarget)))
+                .limit(4)
+                .collect(Collectors.toList());
+
+        if (nearest.isEmpty()) {
+            throw new RuntimeException("조건에 맞는 문장을 찾을 수 없습니다.");
+        }
+
+        Sentence selected = nearest.get(new Random().nextInt(nearest.size()));
+        selected.setLastAccessedAt(LocalDateTime.now());
+        sentenceRepository.save(selected);
+
+        float level = selected.getSentenceLevel() != null
+                ? selected.getSentenceLevel().getSpeechGrade() * 100f
+                : -1f;
+
+        Users user = usersRepository.findById(dto.getUserId())
+                .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
+        ContentsLibrary contentsLibrary = contentsLibraryRepository
+                .findByUserAndContentTypeAndContentId(user, dto.getContentType(), dto.getContentId())
+                .orElseThrow(() -> new RuntimeException("콘텐츠 라이브러리를 찾을 수 없습니다."));
+
+        String text = selected.getText();
+        SentenceType sentenceType = SentenceType.IMPORTANT;
+        Optional<TtsSentence> existingTts = ttsSentenceRepository.findBySentenceIdAndSentenceType(selected.getId(), sentenceType);
+
+        List<TtsSentenceItemDto> contents;
+        if (existingTts.isPresent()) {
+            TtsSentence tts = existingTts.get();
+            contents = List.of(
+                    new TtsSentenceItemDto(text, tts.getFilePathUs(), tts.getFilePathGb(), tts.getFilePathAu())
+            );
+        } else {
+            TtsSentence generated = ttsService.generateTtsFiles(selected.getId(), sentenceType, text);
+            contents = List.of(
+                    new TtsSentenceItemDto(text, generated.getFilePathUs(), generated.getFilePathGb(), generated.getFilePathAu())
+            );
+        }
+
+        return new PronunciationStartResponseDto(text, selected.getId(), contents, level, contentsLibrary.getId());
+    }
+
+
+
+
+    public PronunciationEvalResponseDto evaluatePronunciation(
+            MultipartFile audioFile, String referenceText, Long sentenceId, Long contentsLibraryId) throws Exception {
+
         String ext = FilenameUtils.getExtension(audioFile.getOriginalFilename()).toLowerCase();
         File inputFile = File.createTempFile("input", "." + ext);
         audioFile.transferTo(inputFile);
@@ -40,11 +123,12 @@ public class PronunciationService {
         } else {
             throw new IllegalArgumentException("Only .mp3 and .wav files are supported");
         }
+
         SpeechConfig config = SpeechConfig.fromSubscription(azureSpeechKey, azureSpeechRegion);
         config.setSpeechRecognitionLanguage("en-US");
 
         PronunciationAssessmentConfig pronunciationConfig =
-                new PronunciationAssessmentConfig(text,
+                new PronunciationAssessmentConfig(referenceText,
                         PronunciationAssessmentGradingSystem.HundredMark,
                         PronunciationAssessmentGranularity.Phoneme,
                         true);
@@ -55,10 +139,7 @@ public class PronunciationService {
         SpeechRecognitionResult result = recognizer.recognizeOnceAsync().get();
         PronunciationAssessmentResult assessment = PronunciationAssessmentResult.fromResult(result);
 
-        String feedbackMessage = null;
-
         String json = result.getProperties().getProperty(PropertyId.SpeechServiceResponse_JsonResult);
-        System.out.println("Azure API 응답 JSON:\n" + json);
         ObjectMapper objectMapper = new ObjectMapper();
         JsonNode root = objectMapper.readTree(json);
 
@@ -71,6 +152,8 @@ public class PronunciationService {
                 worstWord = word;
             }
         }
+
+        String feedbackMessage = null;
 
         if (worstWord != null && minScore < 95) {
             String wordText = worstWord.path("Word").asText();
@@ -98,20 +181,40 @@ public class PronunciationService {
                         "'" + correctPhoneme + "'는 정확하게 발음되는 방법을 연습해보세요!");
 
                 feedbackMessage = String.format(
-                        "%s\n\"%s\"['%s']에서 '%s'가 '%s'에 가깝게 들려요. (%s)",
-                        phonemeFeedback, wordText, ipa, correctPhoneme, mistakenPhoneme, phonemeFeedback
+                        "\"%s\"['%s']에서 '%s'가 '%s'에 가깝게 들려요.\n%s",
+                        wordText, ipa, correctPhoneme, mistakenPhoneme, phonemeFeedback
                 );
             }
         }
 
+        double accuracy = assessment.getAccuracyScore();
+        double fluency = assessment.getFluencyScore();
+        double completeness = assessment.getCompletenessScore();
+        double pronunciation = assessment.getPronunciationScore();
+
+        if (sentenceId != null && contentsLibraryId != null) {
+            ContentsLibrary contentsLibrary = contentsLibraryRepository.findById(contentsLibraryId)
+                    .orElseThrow(() -> new RuntimeException("콘텐츠 라이브러리를 찾을 수 없습니다."));
+
+            PronunciationList record = new PronunciationList();
+            record.setSentenceId(sentenceId);
+            record.setContentsLibrary(contentsLibrary);
+            record.setAccuracyScore(accuracy);
+            record.setFluencyScore(fluency);
+            record.setCompletenessScore(completeness);
+            record.setPronunciationScore(pronunciation);
+            record.setFeedbackMessage(feedbackMessage);
+            record.setEvaluatedAt(LocalDateTime.now());
+
+            pronunciationListRepository.save(record);
+        }
+
         return new PronunciationEvalResponseDto(
-                assessment.getAccuracyScore(),
-                assessment.getFluencyScore(),
-                assessment.getCompletenessScore(),
-                assessment.getPronunciationScore(),
-                feedbackMessage
+                accuracy, fluency, completeness, pronunciation, feedbackMessage
         );
     }
+
+
     private static final Map<String, String> phonemeFeedbackMap = Map.ofEntries(
             Map.entry("p", "'p'는 입술을 닫았다가 터뜨리듯이 소리내요!"),
             Map.entry("b", "'b'는 입술을 닫고 성대를 울리며 부드럽게 발음돼요!"),
@@ -170,5 +273,12 @@ public class PronunciationService {
             throw new RuntimeException("ffmpeg 변환 실패. exit code = " + exitCode);
         }
     }
+
+    public String getSentenceTextById(Long sentenceId) {
+        return sentenceRepository.findById(sentenceId)
+                .orElseThrow(() -> new RuntimeException("문장을 찾을 수 없습니다."))
+                .getText();
+    }
+
 }
 

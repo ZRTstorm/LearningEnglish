@@ -12,6 +12,7 @@ public interface UserWordRepository extends JpaRepository<UserWord, Long> {
 
     List<UserWord> findByUser_Id(Long userId);
     Optional<UserWord> findByUser_IdAndWord_Id(Long userId, Long wordId); //
-    Page<UserWord> findByUser_Uid(String uid, Pageable pageable);
+    Page<UserWord> findByUser_Id(Long userId, Pageable pageable); // userId 기반으로 변경
+
 
 }
