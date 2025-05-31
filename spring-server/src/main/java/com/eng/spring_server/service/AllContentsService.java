@@ -84,9 +84,9 @@ public class AllContentsService {
     @Transactional
     public TextContents saveTextContents(TextRequest textRequest) {
         // 콘텐츠 중복 확인
-        Optional<TextContents> byTitle = textContentsRepository.findByTitle(textRequest.getTitle());
-        if (byTitle.isPresent()) {
-            return byTitle.get();
+        List<TextContents> textContents = textContentsRepository.findAllByTitle(textRequest.getTitle());
+        if (!textContents.isEmpty()) {
+            return textContents.get(0);
         }
 
         // 중복 아닐 경우 Python 서버 요청
