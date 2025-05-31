@@ -121,4 +121,12 @@ public class AllContentsController {
 
         return ResponseEntity.noContent().build();
     }
+
+    @Operation(summary = "라이브러리 ID 조회", description = "사용자의 콘텐츠 라이브러리 ID 조회 한다")
+    @GetMapping("/library/ID/{userId}/{contentType}/{contentId}")
+    public ResponseEntity<?> searchLibraryId(@PathVariable Long userId, @PathVariable String contentType, @PathVariable Long contentId) {
+        Long libraryId = allContentsService.getLibraryId(userId, contentType, contentId);
+
+        return ResponseEntity.status(HttpStatus.OK).body(libraryId);
+    }
 }

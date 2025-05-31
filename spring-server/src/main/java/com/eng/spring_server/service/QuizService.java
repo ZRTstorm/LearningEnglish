@@ -2,6 +2,7 @@ package com.eng.spring_server.service;
 
 import com.eng.spring_server.domain.contents.*;
 import com.eng.spring_server.dto.ContentIdDto;
+import com.eng.spring_server.dto.IndexedText;
 import com.eng.spring_server.dto.InsertionQuizDto;
 import com.eng.spring_server.repository.*;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +23,7 @@ public class QuizService {
     private final VideoContentsRepository videoContentsRepository;
     private final TextContentsRepository textContentsRepository;
     private final TextTimeRepository textTimeRepository;
+    private final QuizDataRepository quizDataRepository;
 
     @Transactional(readOnly = true)
     public InsertionQuizDto sentenceInsertionQuiz(ContentIdDto request) {
@@ -40,7 +42,7 @@ public class QuizService {
         }
 
         List<Sentence> sentenceList = sentenceRepository.findAllByContentTypeAndContentId(request.getContentType(), request.getContentId());
-        List<Integer> itemList = shuffleNumber(sentenceList.size(), 4);
+        List<Integer> itemList = shuffleNumber(sentenceList.size(), 5);
 
         List<Long> textTimeIds = new ArrayList<>();
         for (Integer index : itemList) {
@@ -72,7 +74,7 @@ public class QuizService {
     }
 
     @Transactional(readOnly = true)
-    public List<String> summaOrderQuiz(String contentType, Long contentId) {
+    public List<IndexedText> summaOrderQuiz(String contentType, Long contentId) {
         List<Summarization> summaList = summarizationRepository.findAllByContentTypeAndContentIdOrderByIdAsc(contentType, contentId);
 
         List<String> summaTextList = summaList.stream()
@@ -82,10 +84,15 @@ public class QuizService {
         int size = summaTextList.size();
         int num = 5;
         if (num >= size) {
-            return new ArrayList<>(summaTextList);
+            List<IndexedText> fullList = new ArrayList<>();
+            for (int i = 0; i < size; i++) {
+                fullList.add(new IndexedText(i, summaTextList.get(i)));
+            }
+
+            return fullList;
         }
 
-        List<String> selected = new ArrayList<>();
+        List<IndexedText> selected = new ArrayList<>();
         double interval = (double) size / num;
 
         for (int i = 0; i < num; i++) {
@@ -94,10 +101,26 @@ public class QuizService {
             if (end > size) end = size;
 
             int index = start + new Random().nextInt(Math.max(1, end - start));
-            selected.add(summaTextList.get(index));
+            selected.add(new IndexedText(index, summaTextList.get(index)));
         }
 
         return selected;
+    }
+
+    public void saveQuizData(Long libraryId, String quizType, String originalData, String userData, Long score) {
+        QuizData quizData = new QuizData();
+
+        quizData.setContentsLibraryId(libraryId);
+        quizData.setQuizType(quizType);
+        quizData.setOriginalData(originalData);
+        quizData.setUserData(userData);
+        quizData.setScore(score);
+
+        quizDataRepository.save(quizData);
+    }
+
+    public List<QuizData> searchListQuiz(Long libraryId) {
+        return quizDataRepository.searchAllByContentsLibraryId(libraryId);
     }
 
     private List<Integer> shuffleNumber(int num, int item) {

@@ -352,6 +352,23 @@ public class AllContentsService {
         }
     }
 
+    @Transactional(readOnly = true)
+    public Long getLibraryId(Long userId, String contentType, Long contentId) {
+        if (contentType.equalsIgnoreCase("video")) {
+            VideoContents contents = videoContentsRepository.getReferenceById(contentId);
+            Optional<ContentsLibrary> library = contentsLibraryRepository.findByVideoContentsAndUsers_Id(contents, userId);
+            if (library.isEmpty()) throw new IllegalStateException();
+
+            return library.get().getId();
+        } else {
+            TextContents contents = textContentsRepository.getReferenceById(contentId);
+            Optional<ContentsLibrary> library = contentsLibraryRepository.findByTextContentsAndUsers_Id(contents, userId);
+            if (library.isEmpty()) throw new IllegalStateException();
+
+            return library.get().getId();
+        }
+    }
+
     private String buildYoutubeUrl(String videoId) {
         return "https://www.youtube.com/watch?v=" + videoId;
     }
