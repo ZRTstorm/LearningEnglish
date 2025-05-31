@@ -12,6 +12,7 @@ import com.eng.spring_server.dto.contents.ContentsResponseDto;
 import com.eng.spring_server.dto.contents.TimestampDto;
 import com.eng.spring_server.repository.*;
 import com.eng.spring_server.util.YoutubeUtil;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -367,6 +368,14 @@ public class AllContentsService {
 
             return library.get().getId();
         }
+    }
+
+    @Transactional
+    public void updateProgress(Long libraryId, float progress) {
+        ContentsLibrary contents = contentsLibraryRepository.findById(libraryId)
+                .orElseThrow(() -> new EntityNotFoundException("libraryId: " + libraryId));
+
+        contents.setProgress(progress);
     }
 
     private String buildYoutubeUrl(String videoId) {
