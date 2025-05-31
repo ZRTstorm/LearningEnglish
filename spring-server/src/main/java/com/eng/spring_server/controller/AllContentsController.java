@@ -129,4 +129,12 @@ public class AllContentsController {
 
         return ResponseEntity.status(HttpStatus.OK).body(libraryId);
     }
+
+    @Operation(summary = "진행도 업데이트", description = "라이브러리 콘텐츠의 진행도를 업데이트 한다")
+    @GetMapping("/library/progress/{libraryId}")
+    public ResponseEntity<?> progressUpdate(@PathVariable Long libraryId, @RequestParam float progress) {
+        allContentsService.updateProgress(libraryId, progress);
+
+        return ResponseEntity.status(HttpStatus.OK).body("ProgressUpdate");
+    }
 }

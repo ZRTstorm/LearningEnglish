@@ -12,6 +12,7 @@ import com.eng.spring_server.dto.contents.ContentsResponseDto;
 import com.eng.spring_server.dto.contents.TimestampDto;
 import com.eng.spring_server.repository.*;
 import com.eng.spring_server.util.YoutubeUtil;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -83,9 +84,9 @@ public class AllContentsService {
     @Transactional
     public TextContents saveTextContents(TextRequest textRequest) {
         // 콘텐츠 중복 확인
-        Optional<TextContents> byTitle = textContentsRepository.findByTitle(textRequest.getTitle());
-        if (byTitle.isPresent()) {
-            return byTitle.get();
+        List<TextContents> textContents = textContentsRepository.findAllByTitle(textRequest.getTitle());
+        if (!textContents.isEmpty()) {
+            return textContents.get(0);
         }
 
         // 중복 아닐 경우 Python 서버 요청
@@ -367,6 +368,14 @@ public class AllContentsService {
 
             return library.get().getId();
         }
+    }
+
+    @Transactional
+    public void updateProgress(Long libraryId, float progress) {
+        ContentsLibrary contents = contentsLibraryRepository.findById(libraryId)
+                .orElseThrow(() -> new EntityNotFoundException("libraryId: " + libraryId));
+
+        contents.setProgress(progress);
     }
 
     private String buildYoutubeUrl(String videoId) {

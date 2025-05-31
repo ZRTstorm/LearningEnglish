@@ -34,6 +34,9 @@ public class ContentsLibrary {
     @JoinColumn(name = "text_contents_id")
     private TextContents textContents;
 
+    @Column(nullable = false)
+    private float progress = 0f;
+
     // 콘텐츠 추가 일자
     private LocalDateTime date;
 }
