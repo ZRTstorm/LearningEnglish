@@ -19,6 +19,7 @@ import org.springframework.stereotype.Service;
 import org.languagetool.JLanguageTool;
 import org.languagetool.language.AmericanEnglish;
 import org.languagetool.rules.RuleMatch;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
@@ -102,7 +103,7 @@ public class DictationService {
                     .findByUsersAndContentsTypeAndTextContents_Id(user, "text", dto.getContentId())
                     .orElseThrow(() -> new RuntimeException("콘텐츠 라이브러리를 찾을 수 없습니다."));
         } else {
-            throw new RuntimeException("잘못된 콘텐츠 타입입니다.");
+            throw new RuntimeException("잘못 된 콘텐츠 타입입니다.");
         }
 
         Sentence sentence = sentenceRepository.findById(dto.getSentenceId())
@@ -247,7 +248,30 @@ public class DictationService {
         return new DictationStartResponseDto(text, selected.getId(), contents, level, contentsLibrary.getId());
     }
 
+    public DictationStartResponseDto getTestDictation(Long testOrder, String contentType, Long contentId) {
+        List<Sentence> sentenceList = sentenceRepository.findAllWithLevel(contentType, contentId);
+        if (sentenceList.isEmpty()) throw new IllegalStateException();
 
+        int sentenceIdx = 0;
+        if (testOrder == 1) sentenceIdx = sentenceList.size() / 2;
+        else if (testOrder == 2) sentenceIdx = sentenceList.size() - 1;
+
+        Sentence selected = sentenceList.get(sentenceIdx);
+        String text = selected.getText();
+
+        Optional<TtsSentence> existed = ttsSentenceRepository.findBySentenceIdAndSentenceType(selected.getId(), SentenceType.IMPORTANT);
+        List<TtsSentenceItemDto> contents;
+
+        if (existed.isPresent()) {
+            TtsSentence tts = existed.get();
+            contents = List.of(new TtsSentenceItemDto(text, tts.getFilePathUs(), tts.getFilePathGb(), tts.getFilePathAu()));
+        } else {
+            TtsSentence generated = ttsService.generateTtsFiles(selected.getId(), SentenceType.IMPORTANT, text);
+            contents = List.of(new TtsSentenceItemDto(text, generated.getFilePathUs(), generated.getFilePathGb(), generated.getFilePathAu()));
+        }
+
+        return new DictationStartResponseDto(text, selected.getId(), contents, selected.getSentenceLevel().getSpeechGrade(), 0L);
+    }
 
 
 }
