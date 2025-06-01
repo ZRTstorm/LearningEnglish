@@ -1,7 +1,10 @@
 package com.eng.spring_server.controller;
 
 import com.eng.spring_server.dto.ContentIdDto;
+import com.eng.spring_server.dto.Pronunciation.PronunciationEvalResponseDto;
 import com.eng.spring_server.dto.Pronunciation.PronunciationStartResponseDto;
+import com.eng.spring_server.dto.dictation.DictationEvalRequestDto;
+import com.eng.spring_server.dto.dictation.DictationEvalResponseDto;
 import com.eng.spring_server.dto.dictation.DictationStartResponseDto;
 import com.eng.spring_server.service.DictationService;
 import com.eng.spring_server.service.PronunciationService;
@@ -10,10 +13,8 @@ import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequiredArgsConstructor
@@ -40,5 +41,29 @@ public class TestModeController {
         }
 
         return ResponseEntity.status(HttpStatus.OK).body(response);
+    }
+
+    @Operation(summary = "테스트 모드 받아쓰기 채점", description = "테스트 모드에서 받아 쓰기 피드백을 요청 한다")
+    @PostMapping("/write/eval")
+    public ResponseEntity<?> evalTestDictation(@RequestBody DictationEvalRequestDto dto) {
+        DictationEvalResponseDto response = dictationService.evalTestDictation(dto);
+
+        return ResponseEntity.status(HttpStatus.OK).body(response);
+    }
+
+    @Operation(summary = "테스트 모드 발음 평가 채점", description = "테스트 모드에서 발음 평가 피드백을 요청 한다")
+    @PostMapping("/speech/eval")
+    public ResponseEntity<?> evalTestPronoun(@RequestPart("audio")MultipartFile audioFile,
+                                             @RequestParam("sentenceId") Long sentenceId) {
+
+        try {
+            String referenceText = pronunciationService.getSentenceTextById(sentenceId);
+
+            PronunciationEvalResponseDto result = pronunciationService.testEvalPronoun(audioFile, referenceText);
+
+            return ResponseEntity.status(HttpStatus.OK).body(result);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
 }

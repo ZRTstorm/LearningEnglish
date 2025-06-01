@@ -237,6 +237,96 @@ public class PronunciationService {
         );
     }
 
+    public PronunciationEvalResponseDto testEvalPronoun(
+            MultipartFile audioFile, String referenceText) throws Exception {
+
+        String ext = FilenameUtils.getExtension(audioFile.getOriginalFilename()).toLowerCase();
+        File inputFile = File.createTempFile("input", "." + ext);
+        audioFile.transferTo(inputFile);
+
+        File tempFile;
+        if ("mp3".equals(ext)) {
+            tempFile = File.createTempFile("converted", ".wav");
+            convertMp3ToWavWithFfmpeg(inputFile, tempFile);
+        } else if ("wav".equals(ext)) {
+            tempFile = inputFile;
+        } else {
+            throw new IllegalArgumentException("Only .mp3 and .wav files are supported");
+        }
+
+        SpeechConfig config = SpeechConfig.fromSubscription(azureSpeechKey, azureSpeechRegion);
+        config.setSpeechRecognitionLanguage("en-US");
+
+        PronunciationAssessmentConfig pronunciationConfig =
+                new PronunciationAssessmentConfig(referenceText,
+                        PronunciationAssessmentGradingSystem.HundredMark,
+                        PronunciationAssessmentGranularity.Phoneme,
+                        true);
+        AudioConfig audioConfig = AudioConfig.fromWavFileInput(tempFile.getAbsolutePath());
+        SpeechRecognizer recognizer = new SpeechRecognizer(config, audioConfig);
+        pronunciationConfig.applyTo(recognizer);
+
+        SpeechRecognitionResult result = recognizer.recognizeOnceAsync().get();
+        PronunciationAssessmentResult assessment = PronunciationAssessmentResult.fromResult(result);
+
+        String json = result.getProperties().getProperty(PropertyId.SpeechServiceResponse_JsonResult);
+        ObjectMapper objectMapper = new ObjectMapper();
+        JsonNode root = objectMapper.readTree(json);
+
+        JsonNode worstWord = null;
+        double minScore = Double.MAX_VALUE;
+        for (JsonNode word : root.path("NBest").get(0).path("Words")) {
+            double score = word.path("PronunciationAssessment").path("AccuracyScore").asDouble();
+            if (score < minScore) {
+                minScore = score;
+                worstWord = word;
+            }
+        }
+
+        String feedbackMessage = null;
+
+        if (worstWord != null && minScore < 95) {
+            String wordText = worstWord.path("Word").asText();
+            JsonNode phonemes = worstWord.path("Phonemes");
+            JsonNode worstPhoneme = null;
+            double minPhonemeScore = Double.MAX_VALUE;
+
+            StringBuilder ipaBuilder = new StringBuilder();
+            for (JsonNode phoneme : phonemes) {
+                ipaBuilder.append(phoneme.path("Phoneme").asText());
+                double score = phoneme.path("PronunciationAssessment").path("AccuracyScore").asDouble();
+                if (score < minPhonemeScore) {
+                    minPhonemeScore = score;
+                    worstPhoneme = phoneme;
+                }
+            }
+            String ipa = ipaBuilder.toString();
+
+            if (worstPhoneme != null) {
+                String correctPhoneme = worstPhoneme.path("Phoneme").asText();
+                JsonNode nBest = worstPhoneme.path("PronunciationAssessment").path("NBestPhonemes");
+                String mistakenPhoneme = nBest.size() > 1 ? nBest.get(1).path("Phoneme").asText() : "정확하지 않은 발음";
+
+                String phonemeFeedback = phonemeFeedbackMap.getOrDefault(correctPhoneme,
+                        "'" + correctPhoneme + "'는 정확하게 발음되는 방법을 연습해보세요!");
+
+                feedbackMessage = String.format(
+                        "\"%s\"['%s']에서 '%s'가 '%s'에 가깝게 들려요.\n%s",
+                        wordText, ipa, correctPhoneme, mistakenPhoneme, phonemeFeedback
+                );
+            }
+        }
+
+        double accuracy = assessment.getAccuracyScore();
+        double fluency = assessment.getFluencyScore();
+        double completeness = assessment.getCompletenessScore();
+        double pronunciation = assessment.getPronunciationScore();
+
+        return new PronunciationEvalResponseDto(
+                accuracy, fluency, completeness, pronunciation, feedbackMessage
+        );
+    }
+
 
     private static final Map<String, String> phonemeFeedbackMap = Map.ofEntries(
             Map.entry("p", "'p'는 입술을 닫았다가 터뜨리듯이 소리내요!"),

@@ -273,5 +273,56 @@ public class DictationService {
         return new DictationStartResponseDto(text, selected.getId(), contents, selected.getSentenceLevel().getSpeechGrade(), 0L);
     }
 
+    public DictationEvalResponseDto evalTestDictation(DictationEvalRequestDto dto) {
+        String reference = sentenceRepository.findById(dto.getSentenceId())
+                .orElseThrow(IllegalStateException::new)
+                .getText();
+
+        String userInput = dto.getUserText();
+        int editDistance = calculateEditDistance(reference, userInput);
+        double accuracyScore = calculateAccuracy(reference, userInput);
+        double similarityScore = 1.0 - ((double) editDistance / reference.length());
+        double grammarScore = 1.0;
+
+        List<String> incorrectWords = new ArrayList<>();
+        List<String> feedbackMessages = new ArrayList<>();
+
+        try {
+            JLanguageTool langTool = new JLanguageTool(new AmericanEnglish());
+            List<RuleMatch> matches = langTool.check(userInput);
+            grammarScore = 1.0 - ((double) matches.size() / Math.max(1, userInput.split(" ").length));
+
+            for (RuleMatch match : matches) {
+                String ruleId = match.getRule().getId();
+                String feedback;
+
+                switch (ruleId) {
+                    case "MORFOLOGIK_RULE_EN_US":
+                    case "DID_YOU_MEAN":
+                        String wrongWord = userInput.substring(match.getFromPos(), match.getToPos());
+                        String suggestion = match.getSuggestedReplacements().isEmpty() ? "수정안" : match.getSuggestedReplacements().get(0);
+                        feedback = "'" + wrongWord + "'는 '" + suggestion + "'의 오타일 수 있어요.";
+                        break;
+                    default:
+                        String rawMessage = match.getMessage();
+                        String cleanedMessage = cleanSuggestionTags(rawMessage);
+                        feedback = koreanFeedback(ruleId);
+                        if (feedback == null) {
+                            feedback = "문법 오류가 있습니다: " + cleanedMessage;
+                        }
+                        break;
+                }
+
+                feedbackMessages.add(feedback);
+                if (!match.getSuggestedReplacements().isEmpty()) {
+                    incorrectWords.add(match.getSuggestedReplacements().get(0));
+                }
+            }
+        } catch (IOException e) {
+            feedbackMessages.add("LanguageTool 분석 중 오류가 발생했습니다.");
+        }
+
+        return new DictationEvalResponseDto(reference, userInput, accuracyScore, editDistance, incorrectWords, feedbackMessages);
+    }
 
 }
