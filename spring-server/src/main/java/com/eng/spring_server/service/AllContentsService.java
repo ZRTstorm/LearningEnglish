@@ -407,6 +407,26 @@ public class AllContentsService {
         contents.setProgress(progress);
     }
 
+    @Transactional(readOnly = true)
+    public ContentsSummaDto getContentSumma(String contentType, Long contentId) {
+        if (!contentType.equalsIgnoreCase("video")) throw new IllegalStateException();
+
+        Optional<VideoContents> byId = videoContentsRepository.findById(contentId);
+        if (byId.isEmpty()) throw new IllegalStateException();
+
+        VideoContents videoContents = byId.get();
+        ContentsSummaDto dto = new ContentsSummaDto();
+
+        dto.setContentType(contentType);
+        dto.setContentId(contentId);
+        dto.setTextGrade(videoContents.getTextGrade());
+        dto.setSoundGrade(videoContents.getSoundGrade());
+        dto.setVideoUrl(buildYoutubeUrl(videoContents.getVideoKey()));
+        dto.setTitle(removeMp3Suffix(videoContents.getTitle()));
+
+        return dto;
+    }
+
     private String buildYoutubeUrl(String videoId) {
         return "https://www.youtube.com/watch?v=" + videoId;
     }

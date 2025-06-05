@@ -77,12 +77,16 @@ public class EmbeddingService {
                 .filterExpression(b.eq("contentType", contentType).build()).build());
     }
 
-    public ContentIdDto similarVector(Long userId, float start, float end, ContentIdDto request, String option) {
+    public List<ContentIdDto> similarVector(Long userId, float start, float end, ContentIdDto request, String option) {
         String summaryText = textOperationService.getSummaryText(request.getContentType(), request.getContentId());
 
-        List<Document> documents = vectorStore.similaritySearch(SearchRequest.builder().query(summaryText)
-                .topK(10).build());
+        FilterExpressionBuilder b = new FilterExpressionBuilder();
 
+        List<Document> documents = vectorStore.similaritySearch(SearchRequest.builder().query(summaryText)
+                .topK(10)
+                .filterExpression(b.eq("contentType", "video").build()).build());
+
+        List<ContentIdDto> idList = new ArrayList<>();
         for (int i = 1; i < documents.size(); i++) {
             String contentType = documents.get(i).getMetadata().get("contentType").toString();
             String contentId = documents.get(i).getMetadata().get("contentId").toString();
@@ -92,17 +96,21 @@ public class EmbeddingService {
             }
 
             if (checkLevel(contentType, Long.parseLong(contentId), start, end)) {
-                return new ContentIdDto(contentType, Long.parseLong(contentId));
+                idList.add(new ContentIdDto(contentType, Long.parseLong(contentId)));
             }
         }
 
-        return null;
+        return idList;
     }
 
-    public ContentIdDto searchText(Long userId, float start, float end, String text, String option) {
-        List<Document> documents = vectorStore.similaritySearch(SearchRequest.builder().query(text)
-                .topK(10).build());
+    public List<ContentIdDto> searchText(Long userId, float start, float end, String text, String option) {
+        FilterExpressionBuilder b = new FilterExpressionBuilder();
 
+        List<Document> documents = vectorStore.similaritySearch(SearchRequest.builder().query(text)
+                .topK(10)
+                .filterExpression(b.eq("contentType", "video").build()).build());
+
+        List<ContentIdDto> idList = new ArrayList<>();
         for (int i = 1; i < documents.size(); i++) {
             String contentType = documents.get(i).getMetadata().get("contentType").toString();
             String contentId = documents.get(i).getMetadata().get("contentId").toString();
@@ -112,11 +120,11 @@ public class EmbeddingService {
             }
 
             if (checkLevel(contentType, Long.parseLong(contentId), start, end)) {
-                return new ContentIdDto(contentType, Long.parseLong(contentId));
+                idList.add(new ContentIdDto(contentType, Long.parseLong(contentId)));
             }
         }
 
-        return null;
+        return idList;
     }
 
     private boolean checkLibrary(String contentType, Long contentId, Long userId) {
