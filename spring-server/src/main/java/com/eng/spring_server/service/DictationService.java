@@ -40,24 +40,37 @@ public class DictationService {
     private final ContentsLibraryRepository contentsLibraryRepository;
 
     public DictationEvalResponseDto evaluateDictation(DictationEvalRequestDto dto) {
+        // 1) 원문 문장 가져오기
         String reference = sentenceRepository.findById(dto.getSentenceId())
                 .orElseThrow(() -> new RuntimeException("문장을 찾을 수 없습니다."))
                 .getText();
 
+        // 2) 사용자 입력
         String userInput = dto.getUserText();
+
+        // 3) 편집 거리, 정확도, 유사도 계산
         int editDistance = calculateEditDistance(reference, userInput);
         double accuracyScore = calculateAccuracy(reference, userInput);
         double similarityScore = 1.0 - ((double) editDistance / reference.length());
+
+        // 4) 문법 점수 초기화 (LanguageTool 분석 후 재설정)
         double grammarScore = 1.0;
 
+        // 5) 틀린 단어 및 피드백 메시지 리스트 준비
         List<String> incorrectWords = new ArrayList<>();
         List<String> feedbackMessages = new ArrayList<>();
 
         try {
+            // 6) LanguageTool 인스턴스 생성 (미국 영어)
             JLanguageTool langTool = new JLanguageTool(new AmericanEnglish());
+
+            // 7) 사용자 입력 문장(userInput)에 대해 문법 체크 수행
             List<RuleMatch> matches = langTool.check(userInput);
+
+            // 8) 문법 오류 개수 대비 단어 수 비율로 문법 점수 계산
             grammarScore = 1.0 - ((double) matches.size() / Math.max(1, userInput.split(" ").length));
 
+            // 9) 각 오류 매칭 항목에 대해 피드백 메시지와 틀린 단어 추출
             for (RuleMatch match : matches) {
                 String ruleId = match.getRule().getId();
                 String feedback;
@@ -66,20 +79,26 @@ public class DictationService {
                     case "MORFOLOGIK_RULE_EN_US":
                     case "DID_YOU_MEAN":
                         String wrongWord = userInput.substring(match.getFromPos(), match.getToPos());
-                        String suggestion = match.getSuggestedReplacements().isEmpty() ? "수정안" : match.getSuggestedReplacements().get(0);
+                        String suggestion = match.getSuggestedReplacements().isEmpty()
+                                ? "수정안"
+                                : match.getSuggestedReplacements().get(0);
                         feedback = "'" + wrongWord + "'는 '" + suggestion + "'의 오타일 수 있어요.";
                         break;
+
                     default:
                         String rawMessage = match.getMessage();
                         String cleanedMessage = cleanSuggestionTags(rawMessage);
-                        feedback = koreanFeedback(ruleId);
-                        if (feedback == null) {
+                        String koreanMsg = koreanFeedback(ruleId);
+                        if (koreanMsg == null) {
                             feedback = "문법 오류가 있습니다: " + cleanedMessage;
+                        } else {
+                            feedback = koreanMsg;
                         }
                         break;
                 }
 
                 feedbackMessages.add(feedback);
+
                 if (!match.getSuggestedReplacements().isEmpty()) {
                     incorrectWords.add(match.getSuggestedReplacements().get(0));
                 }
@@ -88,7 +107,7 @@ public class DictationService {
             feedbackMessages.add("LanguageTool 분석 중 오류가 발생했습니다.");
         }
 
-        // UID → UserId로 수정
+        // 10) 사용자, 콘텐츠 라이브러리 조회
         Users user = usersRepository.findById(dto.getUserId())
                 .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
 
@@ -105,10 +124,14 @@ public class DictationService {
             throw new RuntimeException("잘못된 콘텐츠 타입입니다.");
         }
 
+        // 11) 문장 레벨(스피치 등급) 조회
         Sentence sentence = sentenceRepository.findById(dto.getSentenceId())
                 .orElseThrow(() -> new RuntimeException("문장을 찾을 수 없습니다."));
-        float level = sentence.getSentenceLevel() != null ? sentence.getSentenceLevel().getSpeechGrade() * 100f : -1f;
+        float level = sentence.getSentenceLevel() != null
+                ? sentence.getSentenceLevel().getSpeechGrade() * 100f
+                : -1f;
 
+        // 12) DB에 채점 결과 저장 (DictationList 엔티티)
         DictationList dictation = new DictationList();
         dictation.setSentenceId(dto.getSentenceId());
         dictation.setContentsLibrary(contentsLibrary);
@@ -116,11 +139,20 @@ public class DictationService {
         dictation.setUserText(userInput);
         dictation.setScore(accuracyScore);
         dictation.setSimilarityScore(similarityScore);
-        dictation.setGrammarScore(grammarScore);
-        dictation.setFeedback(String.join(" ", feedbackMessages));
+        dictation.setGrammarScore(grammarScore);                      // [ADDED] 문법 점수 저장
+        dictation.setFeedback(String.join(" ", feedbackMessages));  // 기존 피드백 메시지를 하나의 문자열로 저장
         dictationListRepository.save(dictation);
 
-        return new DictationEvalResponseDto(reference, userInput, accuracyScore, editDistance, incorrectWords, feedbackMessages);
+        // 13) 바뀐 생성자 인자 순서: 마지막에 grammarScore 추가
+        return new DictationEvalResponseDto(
+                reference,
+                userInput,
+                accuracyScore,
+                editDistance,
+                incorrectWords,
+                feedbackMessages,
+                grammarScore                                      // [ADDED] 프론트로 전달할 문법 점수
+        );
     }
 
 

@@ -18,5 +18,6 @@ public class DictationEvalResponseDto {
     private int editDistance;
     private List<String> incorrectWords; // 틀린 단어들
     private List<String> feedbackMessages; // 피드백 문장 리스트
+    private Double grammarScore;
 
 }
