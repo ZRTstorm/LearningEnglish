@@ -1,17 +1,17 @@
 package com.eng.spring_server.controller;
 
-import com.eng.spring_server.dto.Pronunciation.PronunciationEvalRequestDto;
-import com.eng.spring_server.dto.Pronunciation.PronunciationEvalResponseDto;
-import com.eng.spring_server.dto.Pronunciation.PronunciationStartRequestDto;
-import com.eng.spring_server.dto.Pronunciation.PronunciationStartResponseDto;
+import com.eng.spring_server.dto.Pronunciation.*;
 import com.eng.spring_server.service.PronunciationService;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/pronunciation")
@@ -20,11 +20,13 @@ public class PronunciationController {
 
     private final PronunciationService pronunciationService;
 
+    @Operation(summary = "발음평가 시작")
     @PostMapping("/start")
     public ResponseEntity<PronunciationStartResponseDto> startPronunciation(@RequestBody PronunciationStartRequestDto request) {
         return ResponseEntity.ok(pronunciationService.getStartSentence(request));
     }
 
+    @Operation(summary = "발음평가 채점")
     @PostMapping(value = "/evaluate", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<PronunciationEvalResponseDto> evaluate(
             @RequestPart("audio") MultipartFile audioFile,
@@ -45,8 +47,11 @@ public class PronunciationController {
         }
     }
 
-
-
+    @Operation(summary = "발음평가 조회")
+    @GetMapping("/list/{libraryId}")
+    public List<PronunciationResultDto> getBestPronunciationResults(@PathVariable Long libraryId) {
+        return pronunciationService.getBestResultsByLibraryId(libraryId);
+    }
 
 
 

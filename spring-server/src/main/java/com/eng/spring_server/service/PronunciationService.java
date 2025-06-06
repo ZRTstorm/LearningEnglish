@@ -7,6 +7,7 @@ import com.eng.spring_server.domain.contents.TtsSentence;
 import com.eng.spring_server.domain.enums.SentenceType;
 import com.eng.spring_server.domain.pronunciation.PronunciationList;
 import com.eng.spring_server.dto.Pronunciation.PronunciationEvalResponseDto;
+import com.eng.spring_server.dto.Pronunciation.PronunciationResultDto;
 import com.eng.spring_server.dto.Pronunciation.PronunciationStartRequestDto;
 import com.eng.spring_server.dto.Pronunciation.PronunciationStartResponseDto;
 import com.eng.spring_server.dto.dictation.TtsSentenceItemDto;
@@ -294,6 +295,40 @@ public class PronunciationService {
                 .orElseThrow(() -> new RuntimeException("문장을 찾을 수 없습니다."))
                 .getText();
     }
+
+
+    public List<PronunciationResultDto> getBestResultsByLibraryId(Long contentsLibraryId) {
+        List<PronunciationList> all = pronunciationListRepository.findByContentsLibrary_Id(contentsLibraryId);
+        ObjectMapper objectMapper = new ObjectMapper();
+
+        return all.stream()
+                .collect(Collectors.groupingBy(PronunciationList::getSentenceId))
+                .values().stream()
+                .map(list -> list.stream()
+                        .max(Comparator.comparing(PronunciationList::getAccuracyScore))
+                        .orElse(null))
+                .filter(Objects::nonNull)
+                .map(pl -> {
+                    Map<String, Object> parsedFeedback = null;
+                    try {
+                        parsedFeedback = objectMapper.readValue(pl.getFeedbackMessage(), Map.class);
+                    } catch (Exception e) {
+                        parsedFeedback = Map.of("raw", pl.getFeedbackMessage());
+                    }
+
+                    return PronunciationResultDto.builder()
+                            .sentenceId(pl.getSentenceId())
+                            .accuracyScore(pl.getAccuracyScore())
+                            .fluencyScore(pl.getFluencyScore())
+                            .completenessScore(pl.getCompletenessScore())
+                            .pronunciationScore(pl.getPronunciationScore())
+                            .feedback(parsedFeedback)
+                            .evaluatedAt(pl.getEvaluatedAt())
+                            .build();
+                })
+                .collect(Collectors.toList());
+    }
+
 
 }
 

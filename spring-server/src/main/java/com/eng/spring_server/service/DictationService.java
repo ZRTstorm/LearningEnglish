@@ -39,6 +39,7 @@ public class DictationService {
     private final UsersRepository usersRepository;
     private final ContentsLibraryRepository contentsLibraryRepository;
 
+
     public DictationEvalResponseDto evaluateDictation(DictationEvalRequestDto dto) {
         // 1) 원문 문장 가져오기
         String reference = sentenceRepository.findById(dto.getSentenceId())
@@ -279,6 +280,26 @@ public class DictationService {
         return new DictationStartResponseDto(text, selected.getId(), contents, level, contentsLibrary.getId());
     }
 
+    public List<DictationResultDto> getBestResultsByLibraryId(Long contentsLibraryId) {
+        List<DictationList> all = dictationListRepository.findByContentsLibrary_Id(contentsLibraryId);
+
+        return all.stream()
+                .collect(Collectors.groupingBy(DictationList::getSentenceId))
+                .values().stream()
+                .map(list -> list.stream()
+                        .max(Comparator.comparing(DictationList::getGrammarScore))
+                        .orElse(null))
+                .filter(Objects::nonNull)
+                .map(dl -> DictationResultDto.builder()
+                        .sentenceId(dl.getSentenceId())
+                        .userText(dl.getUserText())
+                        .grammarScore(dl.getGrammarScore())
+                        .similarityScore(dl.getSimilarityScore())
+                        .feedback(dl.getFeedback())
+                        .createdAt(dl.getCreatedAt())
+                        .build())
+                .collect(Collectors.toList());
+    }
 
 
 
