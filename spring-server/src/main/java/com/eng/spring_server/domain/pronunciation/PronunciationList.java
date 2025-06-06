@@ -27,6 +27,7 @@ public class PronunciationList {
     private double completenessScore;
     private double pronunciationScore;
 
+    @Column(columnDefinition = "TEXT")
     private String feedbackMessage;
 
     private LocalDateTime evaluatedAt = LocalDateTime.now();
