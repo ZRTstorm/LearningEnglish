@@ -31,4 +31,10 @@ public class DictationController {
         DictationEvalResponseDto response = dictationService.evaluateDictation(dto);
         return ResponseEntity.ok(response);
     }
+
+    @Operation(summary = "받아쓰기 조회")
+    @GetMapping("/list/{libraryId}")
+    public List<DictationResultDto> getBestDictationResults(@PathVariable Long libraryId) {
+        return dictationService.getBestResultsByLibraryId(libraryId);
+    }
 }

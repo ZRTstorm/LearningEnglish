@@ -7,6 +7,7 @@ import com.eng.spring_server.domain.contents.TtsSentence;
 import com.eng.spring_server.domain.enums.SentenceType;
 import com.eng.spring_server.domain.pronunciation.PronunciationList;
 import com.eng.spring_server.dto.Pronunciation.PronunciationEvalResponseDto;
+import com.eng.spring_server.dto.Pronunciation.PronunciationResultDto;
 import com.eng.spring_server.dto.Pronunciation.PronunciationStartRequestDto;
 import com.eng.spring_server.dto.Pronunciation.PronunciationStartResponseDto;
 import com.eng.spring_server.dto.dictation.TtsSentenceItemDto;
@@ -163,24 +164,27 @@ public class PronunciationService {
         PronunciationAssessmentResult assessment = PronunciationAssessmentResult.fromResult(result);
 
         String json = result.getProperties().getProperty(PropertyId.SpeechServiceResponse_JsonResult);
+        System.out.println("Azure Speech JSON 결과:\n" + json);
         ObjectMapper objectMapper = new ObjectMapper();
         JsonNode root = objectMapper.readTree(json);
 
-        JsonNode worstWord = null;
-        double minScore = Double.MAX_VALUE;
+        List<String> feedbackMessages = new ArrayList<>();
+        List<JsonNode> targetWords = new ArrayList<>();
+
         for (JsonNode word : root.path("NBest").get(0).path("Words")) {
             double score = word.path("PronunciationAssessment").path("AccuracyScore").asDouble();
-            if (score < minScore) {
-                minScore = score;
-                worstWord = word;
+            if (score < 95) {
+                targetWords.add(word);
             }
         }
 
-        String feedbackMessage = null;
+        targetWords.sort(Comparator.comparingDouble(w ->
+                w.path("PronunciationAssessment").path("AccuracyScore").asDouble()));
 
-        if (worstWord != null && minScore < 95) {
-            String wordText = worstWord.path("Word").asText();
-            JsonNode phonemes = worstWord.path("Phonemes");
+        for (int i = 0; i < Math.min(5, targetWords.size()); i++) {
+            JsonNode wordNode = targetWords.get(i);
+            String wordText = wordNode.path("Word").asText();
+            JsonNode phonemes = wordNode.path("Phonemes");
             JsonNode worstPhoneme = null;
             double minPhonemeScore = Double.MAX_VALUE;
 
@@ -193,47 +197,56 @@ public class PronunciationService {
                     worstPhoneme = phoneme;
                 }
             }
-            String ipa = ipaBuilder.toString();
 
             if (worstPhoneme != null) {
                 String correctPhoneme = worstPhoneme.path("Phoneme").asText();
                 JsonNode nBest = worstPhoneme.path("PronunciationAssessment").path("NBestPhonemes");
-                String mistakenPhoneme = nBest.size() > 1 ? nBest.get(1).path("Phoneme").asText() : "정확하지 않은 발음";
+                String mistakenPhoneme = "정확하지 않은 발음";
 
-                String phonemeFeedback = phonemeFeedbackMap.getOrDefault(correctPhoneme,
-                        "'" + correctPhoneme + "'는 정확하게 발음되는 방법을 연습해보세요!");
+                // 후보 음소가 1개 이상 있을 경우 처리
+                if (nBest.isArray() && nBest.size() >= 1) {
+                    String heardPhoneme = nBest.get(0).path("Phoneme").asText();
 
-                feedbackMessage = String.format(
-                        "\"%s\"['%s']에서 '%s'가 '%s'에 가깝게 들려요.\n%s",
-                        wordText, ipa, correctPhoneme, mistakenPhoneme, phonemeFeedback
+                    if (!heardPhoneme.equals(correctPhoneme)) {
+                        mistakenPhoneme = "'" + heardPhoneme + "'";
+                    }
+                }
+
+                String phonemeFeedback = phonemeFeedbackMap.getOrDefault(
+                        correctPhoneme,
+                        "'" + correctPhoneme + "'는 정확하게 발음되는 방법을 연습해보세요!"
                 );
+
+                String message = String.format(
+                        "\"%s\"['%s']에서 '%s'가 %s으로 들려요. %s",
+                        wordText, ipaBuilder.toString(),
+                        correctPhoneme, mistakenPhoneme, phonemeFeedback
+                );
+
+                feedbackMessages.add(message);
             }
         }
 
-        double accuracy = assessment.getAccuracyScore();
-        double fluency = assessment.getFluencyScore();
-        double completeness = assessment.getCompletenessScore();
-        double pronunciation = assessment.getPronunciationScore();
+        ContentsLibrary contentsLibrary = contentsLibraryRepository.findById(contentsLibraryId)
+                .orElseThrow(() -> new IllegalArgumentException("해당 콘텐츠 ID가 존재하지 않습니다."));
 
-        if (sentenceId != null && contentsLibraryId != null) {
-            ContentsLibrary contentsLibrary = contentsLibraryRepository.findById(contentsLibraryId)
-                    .orElseThrow(() -> new RuntimeException("콘텐츠 라이브러리를 찾을 수 없습니다."));
-
-            PronunciationList record = new PronunciationList();
-            record.setSentenceId(sentenceId);
-            record.setContentsLibrary(contentsLibrary);
-            record.setAccuracyScore(accuracy);
-            record.setFluencyScore(fluency);
-            record.setCompletenessScore(completeness);
-            record.setPronunciationScore(pronunciation);
-            record.setFeedbackMessage(feedbackMessage);
-            record.setEvaluatedAt(LocalDateTime.now());
-
-            pronunciationListRepository.save(record);
-        }
+        PronunciationList entity = new PronunciationList();
+        entity.setAccuracyScore(assessment.getAccuracyScore());
+        entity.setFluencyScore(assessment.getFluencyScore());
+        entity.setCompletenessScore(assessment.getCompletenessScore());
+        entity.setPronunciationScore(assessment.getPronunciationScore());
+        entity.setSentenceId(sentenceId);
+        entity.setContentsLibrary(contentsLibrary); //
+        entity.setFeedbackMessage(objectMapper.writeValueAsString(feedbackMessages));
+        entity.setEvaluatedAt(LocalDateTime.now());
+        pronunciationListRepository.save(entity);
 
         return new PronunciationEvalResponseDto(
-                accuracy, fluency, completeness, pronunciation, feedbackMessage
+                assessment.getAccuracyScore(),
+                assessment.getFluencyScore(),
+                assessment.getCompletenessScore(),
+                assessment.getPronunciationScore(),
+                feedbackMessages
         );
     }
 
@@ -328,6 +341,9 @@ public class PronunciationService {
     }
 
 
+
+
+
     private static final Map<String, String> phonemeFeedbackMap = Map.ofEntries(
             Map.entry("p", "'p'는 입술을 닫았다가 터뜨리듯이 소리내요!"),
             Map.entry("b", "'b'는 입술을 닫고 성대를 울리며 부드럽게 발음돼요!"),
@@ -392,6 +408,40 @@ public class PronunciationService {
                 .orElseThrow(() -> new RuntimeException("문장을 찾을 수 없습니다."))
                 .getText();
     }
+
+
+    public List<PronunciationResultDto> getBestResultsByLibraryId(Long contentsLibraryId) {
+        List<PronunciationList> all = pronunciationListRepository.findByContentsLibrary_Id(contentsLibraryId);
+        ObjectMapper objectMapper = new ObjectMapper();
+
+        return all.stream()
+                .collect(Collectors.groupingBy(PronunciationList::getSentenceId))
+                .values().stream()
+                .map(list -> list.stream()
+                        .max(Comparator.comparing(PronunciationList::getAccuracyScore))
+                        .orElse(null))
+                .filter(Objects::nonNull)
+                .map(pl -> {
+                    Map<String, Object> parsedFeedback = null;
+                    try {
+                        parsedFeedback = objectMapper.readValue(pl.getFeedbackMessage(), Map.class);
+                    } catch (Exception e) {
+                        parsedFeedback = Map.of("raw", pl.getFeedbackMessage());
+                    }
+
+                    return PronunciationResultDto.builder()
+                            .sentenceId(pl.getSentenceId())
+                            .accuracyScore(pl.getAccuracyScore())
+                            .fluencyScore(pl.getFluencyScore())
+                            .completenessScore(pl.getCompletenessScore())
+                            .pronunciationScore(pl.getPronunciationScore())
+                            .feedback(parsedFeedback)
+                            .evaluatedAt(pl.getEvaluatedAt())
+                            .build();
+                })
+                .collect(Collectors.toList());
+    }
+
 
 }
 
