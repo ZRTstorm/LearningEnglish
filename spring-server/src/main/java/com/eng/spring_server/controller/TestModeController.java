@@ -50,20 +50,4 @@ public class TestModeController {
 
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
-
-    @Operation(summary = "테스트 모드 발음 평가 채점", description = "테스트 모드에서 발음 평가 피드백을 요청 한다")
-    @PostMapping("/speech/eval")
-    public ResponseEntity<?> evalTestPronoun(@RequestPart("audio")MultipartFile audioFile,
-                                             @RequestParam("sentenceId") Long sentenceId) {
-
-        try {
-            String referenceText = pronunciationService.getSentenceTextById(sentenceId);
-
-            PronunciationEvalResponseDto result = pronunciationService.testEvalPronoun(audioFile, referenceText);
-
-            return ResponseEntity.status(HttpStatus.OK).body(result);
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-        }
-    }
 }

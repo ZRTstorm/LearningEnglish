@@ -375,7 +375,7 @@ public class DictationService {
             feedbackMessages.add("LanguageTool 분석 중 오류가 발생했습니다.");
         }
 
-        return new DictationEvalResponseDto(reference, userInput, accuracyScore, editDistance, incorrectWords, feedbackMessages);
+        return new DictationEvalResponseDto(reference, userInput, accuracyScore, editDistance, incorrectWords, feedbackMessages, grammarScore);
     }
 
 }
