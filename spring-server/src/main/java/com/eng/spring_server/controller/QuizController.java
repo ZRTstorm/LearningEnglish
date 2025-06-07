@@ -40,9 +40,9 @@ public class QuizController {
     @GetMapping("/save/{quizType}/{libraryId}")
     public ResponseEntity<?> saveQuiz(@PathVariable String quizType, @PathVariable Long libraryId,
                                       @RequestParam String originalData, @RequestParam String userData, @RequestParam Long score) {
-        quizService.saveQuizData(libraryId, quizType, originalData, userData, score);
+        Long quizId = quizService.saveQuizData(libraryId, quizType, originalData, userData, score);
 
-        return ResponseEntity.status(HttpStatus.OK).body("saveOk");
+        return ResponseEntity.status(HttpStatus.OK).body(quizId);
     }
 
     @Operation(summary = "퀴즈 데이터 리스트 확인", description = "사용자의 퀴즈 리스트를 조회 한다")

@@ -107,7 +107,7 @@ public class QuizService {
         return selected;
     }
 
-    public void saveQuizData(Long libraryId, String quizType, String originalData, String userData, Long score) {
+    public Long saveQuizData(Long libraryId, String quizType, String originalData, String userData, Long score) {
         QuizData quizData = new QuizData();
 
         quizData.setContentsLibraryId(libraryId);
@@ -117,7 +117,9 @@ public class QuizService {
         quizData.setScore(score);
         quizData.setDate(LocalDateTime.now());
 
-        quizDataRepository.save(quizData);
+        QuizData saved = quizDataRepository.save(quizData);
+
+        return saved.getId();
     }
 
     public InsertionFeedbackDto insertFeedback(Long quizId) {
