@@ -74,6 +74,7 @@ public class DictationService {
             // 9) 각 오류 매칭 항목에 대해 피드백 메시지와 틀린 단어 추출
             for (RuleMatch match : matches) {
                 String ruleId = match.getRule().getId();
+                System.out.println("RuleID: " + ruleId);
                 String feedback;
 
                 switch (ruleId) {
@@ -164,7 +165,8 @@ public class DictationService {
 
     // 피드백 한글 매핑 함수
     private String koreanFeedback(String ruleId) {
-        switch (ruleId) {
+        String baseRuleId = ruleId.replaceAll("(_\\d+)$", "");
+        switch (baseRuleId) {
             case "EN_A_VS_AN": return "a/an 사용에 문제가 있습니다. 모음/자음 여부에 따라 적절히 수정하세요.";
             case "EN_COMMA_SPACE": return "쉼표 뒤에는 공백이 필요합니다.";
             case "EN_QUOTES": return "따옴표 사용에 주의하세요.";
@@ -178,11 +180,42 @@ public class DictationService {
             case "ENGLISH_WORD_REPEAT_BEGINNING_RULE": return "문장 시작 부분에 단어 반복이 있습니다.";
             case "POSSESSIVE_APOSTROPHE": return "소유격 사용에 문제가 있습니다. apostrophe(')를 확인하세요.";
             case "THEN_NOT_THAN": return "'than' 대신 'then'을 사용한 것 같아요.";
+            case "IT_IS": return "'it's'와 'its' 사용을 혼동했을 수 있습니다.";
             case "ITS_VS_ITS": return "'it's'와 'its' 사용을 혼동했을 수 있습니다.";
             case "THERE_VS_THEIR": return "'there'와 'their'을 구분해 주세요.";
             case "AFFECT_EFFECT": return "'affect'와 'effect'의 차이를 구분해 주세요.";
             case "I_E_E_G": return "'i.e.' 또는 'e.g.' 사용 시 올바른 문법을 따르세요.";
             case "TO_TOO": return "'to'와 'too'의 의미를 구분해서 사용하세요.";
+            case "EN_COMMA_BUT": return "but 앞에는 쉼표가 필요합니다.";
+            case "EN_COMMA_THAT": return "that 앞에는 쉼표를 사용하지 마세요.";
+            case "EN_COMMA_WHICH": return "which 앞에는 쉼표가 필요할 수 있습니다.";
+            case "SENTENCE_FRAGMENT": return "문장이 불완전합니다. 주어나 동사가 빠졌을 수 있습니다.";
+            case "EN_CONTRACTION_SPELLING": return "축약형의 철자에 주의하세요.";
+            case "CONFUSED_WORDS": return "비슷하게 생긴 다른 단어와 혼동한 것 같습니다.";
+            case "EN_PUNCTUATION_SPACE": return "구두점 뒤에는 공백이 필요합니다.";
+            case "SENTENCE_END_PERIOD": return "문장 끝에 마침표가 필요합니다.";
+            case "COMMA_COMPOUND_SENTENCE": return "문장 연결 시 쉼표와 접속사(and, but, or) 사용에 주의하세요.";
+            case "EN_SIMPLE_PAST": return "과거형 동사 사용이 올바른지 확인하세요.";
+            case "SINGULAR_VS_PLURAL": return "단수/복수 형태를 올바르게 사용하세요.";
+            case "PRP_MISSING": return "주어 또는 목적어 대명사가 빠졌을 수 있습니다.";
+            case "COMMA_INSIDE_QUOTE": return "따옴표 안/밖 쉼표 위치에 주의하세요.";
+            case "SPELLER_RULE": return "철자 오류가 있습니다. 단어를 다시 확인하세요.";
+            case "ENGLISH_WORD_REPEAT_RULE": return "단어가 반복되었습니다.";
+            case "EN_COMMA_SENTENCE_TOO_LONG": return "문장이 너무 길거나 쉼표로 분리된 부분이 많습니다. 문장을 나누세요.";
+            case "MORFOLOGIK_RULE_EN_US": return "철자 오류가 있습니다. 미국식 영문법 기준으로 확인하세요.";
+            case "MORFOLOGIK_RULE_EN_GB": return "철자 오류가 있습니다. 영국식 영문법 기준으로 확인하세요.";
+            case "EN_DETERMINER_USAGE": return "관사(the, a, an) 사용에 주의하세요.";
+            case "EN_PRONOUN_USAGE": return "대명사(he, she, it, they 등) 사용이 올바른지 확인하세요.";
+            case "EN_A_WHILE": return "a while과 awhile의 차이를 구분해 사용하세요.";
+            case "EN_COMPOUND_WORDS": return "복합 단어 사용에 주의하세요.";
+            case "EN_PASSIVE_VOICE": return "수동태 사용이 자연스러운지 확인하세요.";
+            case "EN_CONDITIONALS": return "조건문(if절 등) 사용이 올바른지 확인하세요.";
+            case "EN_COMMA_PARENTHESES": return "괄호 사용 시 쉼표 위치에 주의하세요.";
+            case "EN_PREPOSITION": return "전치사 사용에 주의하세요.";
+            case "EN_ADVERB_ADJECTIVE_ORDER": return "부사와 형용사의 순서에 주의하세요.";
+            case "EN_ARTICLE_MISSING": return "관사(a, an, the)가 빠졌을 수 있습니다.";
+            case "EN_PARAGRAPH_START": return "단락 시작 부분에 대문자를 사용하세요.";
+
             default: return null;
         }
     }
