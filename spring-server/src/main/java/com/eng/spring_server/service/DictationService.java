@@ -216,6 +216,9 @@ public class DictationService {
             case "EN_ADVERB_ADJECTIVE_ORDER": return "부사와 형용사의 순서에 주의하세요.";
             case "EN_ARTICLE_MISSING": return "관사(a, an, the)가 빠졌을 수 있습니다.";
             case "EN_PARAGRAPH_START": return "단락 시작 부분에 대문자를 사용하세요.";
+            case "THIS_NNS": return "'This'는 단수명사(혹은 단수동사)와 함께 써야 합니다. 복수에는 'These'를 사용하세요.";
+            case "PLURAL_VERB_AFTER_THIS": return "'This' 다음에는 단수 동사(is 등)가 와야 합니다. 복수 동사(are)는 잘못된 조합입니다.";
+            case "NON3PRS_VERB": return "3인칭 단수 주어일 때 동사에 s(es)를 붙여야 합니다.";
 
             default: return null;
         }
@@ -324,14 +327,22 @@ public class DictationService {
                         .max(Comparator.comparing(DictationList::getGrammarScore))
                         .orElse(null))
                 .filter(Objects::nonNull)
-                .map(dl -> DictationResultDto.builder()
-                        .sentenceId(dl.getSentenceId())
-                        .userText(dl.getUserText())
-                        .grammarScore(dl.getGrammarScore())
-                        .similarityScore(dl.getSimilarityScore())
-                        .feedback(dl.getFeedback())
-                        .createdAt(dl.getCreatedAt())
-                        .build())
+                .map(dl -> {
+
+                    String sentenceText = sentenceRepository.findById(dl.getSentenceId())
+                            .map(Sentence::getText)
+                            .orElse("");
+
+                    return DictationResultDto.builder()
+                            .sentenceId(dl.getSentenceId())
+                            .userText(dl.getUserText())
+                            .grammarScore(dl.getGrammarScore())
+                            .similarityScore(dl.getSimilarityScore())
+                            .feedback(dl.getFeedback())
+                            .createdAt(dl.getCreatedAt())
+                            .sentence(sentenceText)
+                            .build();
+                })
                 .collect(Collectors.toList());
     }
     public DictationStartResponseDto getTestDictation(Long testOrder, String contentType, Long contentId) {

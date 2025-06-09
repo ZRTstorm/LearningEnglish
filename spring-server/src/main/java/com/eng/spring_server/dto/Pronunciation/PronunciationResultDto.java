@@ -18,4 +18,5 @@ public class PronunciationResultDto {
     private double pronunciationScore;
     private Map<String, Object> feedback;  // JSON 파싱된 결과
     private LocalDateTime evaluatedAt;
+    private String sentence;
 }

@@ -16,4 +16,5 @@ public class DictationResultDto {
     private Double similarityScore;
     private String feedback;
     private LocalDateTime createdAt;
+    private String sentence;
 }

@@ -218,7 +218,7 @@ public class PronunciationService {
                 );
 
                 String message = String.format(
-                        "\"%s\"['%s']에서 '%s'가 %s으로 들려요. %s",
+                        "%s[%s]에서 '%s'가 %s으로 들려요. %s",
                         wordText, ipaBuilder.toString(),
                         correctPhoneme, mistakenPhoneme, phonemeFeedback
                 );
@@ -336,6 +336,10 @@ public class PronunciationService {
                         parsedFeedback = Map.of("raw", pl.getFeedbackMessage());
                     }
 
+                    String sentenceText = sentenceRepository.findById(pl.getSentenceId())
+                            .map(Sentence::getText)
+                            .orElse("");
+
                     return PronunciationResultDto.builder()
                             .sentenceId(pl.getSentenceId())
                             .accuracyScore(pl.getAccuracyScore())
@@ -344,6 +348,7 @@ public class PronunciationService {
                             .pronunciationScore(pl.getPronunciationScore())
                             .feedback(parsedFeedback)
                             .evaluatedAt(pl.getEvaluatedAt())
+                            .sentence(sentenceText)
                             .build();
                 })
                 .collect(Collectors.toList());
