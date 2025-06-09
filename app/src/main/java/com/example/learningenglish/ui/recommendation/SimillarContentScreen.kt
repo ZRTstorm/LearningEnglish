@@ -103,25 +103,13 @@ fun SimilarContentScreen(
             Spacer(modifier = Modifier.height(16.dp))
 
             LazyColumn {
-                items(searchResults) { result ->
-                    val (contentType, contentId) = result
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(8.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text("Type: $contentType, ID: $contentId")
-                        }
-                        Button(onClick = {
-                            coroutineScope.launch {
-                                viewModel.addContentToLibrary(contentType, contentId, userId)
-                            }
-                        }) {
-                            Text("추가")
-                        }
-                    }
+                items(searchResults) { (contentType, contentId) ->
+                    SearchResultCard(
+                        contentType = contentType,
+                        contentId = contentId,
+                        userId = userId,
+                        viewModel = viewModel
+                    )
                 }
             }
         }

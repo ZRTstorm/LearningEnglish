@@ -27,6 +27,7 @@ import com.example.learningenglish.data.model.PronunciationHistoryItem
 import com.example.learningenglish.data.model.PronunciationStartRequest
 import com.example.learningenglish.data.model.PronunciationStartResponse
 import com.example.learningenglish.data.model.QuizHistoryItem
+import com.example.learningenglish.data.model.SummaContentResponse
 import com.example.learningenglish.data.model.TextDetailResponse
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
@@ -118,7 +119,7 @@ interface ApiService {
         @Query("end") end: Float,
         @Query("option") option: String,
         @Query("text") text: String
-    ): Response<ContentSearchResult>
+    ): List<ContentSearchResult>
 
     //유사 컨텐츠
     @GET("/embedding/search/service/{contentType}/{contentId}/{userId}")
@@ -129,7 +130,14 @@ interface ApiService {
         @Query("start") startLevel: Float,
         @Query("end") endLevel: Float,
         @Query("option") option: String = "library"
-    ): Response<ContentSearchResult>
+    ): List<ContentSearchResult>
+
+    //축약 콘텐츠 조회
+    @GET("/api/audio/summaContent/{contentType}/{contentId}")
+    suspend fun getSummaContent(
+        @Path("contentType") contentType: String,
+        @Path("contentId") contentId: Int
+    ): SummaContentResponse
 
     //퀴즈 삽입
     @GET("quiz/insertion/{contentType}/{contentId}")

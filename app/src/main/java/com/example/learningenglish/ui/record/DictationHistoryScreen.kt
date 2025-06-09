@@ -53,12 +53,16 @@ fun DictationHistoryScreen(
                     shape = RoundedCornerShape(12.dp)
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
-                        Text("✏️ 문장: ${item.userText}", style = MaterialTheme.typography.titleMedium)
+                        Text("✏️ 문장: ${item.sentence}", style = MaterialTheme.typography.titleMedium)
 
                         if (expandedCardId == item.sentenceId) {
                             Spacer(modifier = Modifier.height(8.dp))
 
-                            Text("📝 문법 점수", style = MaterialTheme.typography.titleSmall)
+                            Text("내가 작성한 문장: ${item.userText}")
+
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            Text("문법 점수", style = MaterialTheme.typography.titleSmall)
                             LinearProgressIndicator(
                                 progress = (item.grammarScore.toFloat() / 100f).coerceIn(0f, 1f),
                                 modifier = Modifier
@@ -71,7 +75,7 @@ fun DictationHistoryScreen(
 
                             Spacer(modifier = Modifier.height(8.dp))
 
-                            Text("📊 유사도 점수", style = MaterialTheme.typography.titleSmall)
+                            Text("유사도 점수", style = MaterialTheme.typography.titleSmall)
                             LinearProgressIndicator(
                                 progress = (item.similarityScore.toFloat() / 100f).coerceIn(0f, 1f),
                                 modifier = Modifier
@@ -91,7 +95,7 @@ fun DictationHistoryScreen(
                             }
 
                             Spacer(modifier = Modifier.height(8.dp))
-                            Text("⏰ 제출 시각: ${item.createdAt}", style = MaterialTheme.typography.labelSmall)
+                            Text("평가 시각: ${item.createdAt}", style = MaterialTheme.typography.labelSmall)
                         }
 
                         Spacer(modifier = Modifier.height(12.dp))

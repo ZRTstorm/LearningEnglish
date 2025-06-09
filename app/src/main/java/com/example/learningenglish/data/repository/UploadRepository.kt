@@ -47,6 +47,7 @@ import com.example.learningenglish.data.model.QuizHistoryItem
 import okhttp3.RequestBody
 import okhttp3.RequestBody.Companion.asRequestBody
 import androidx.compose.ui.platform.LocalContext
+import com.example.learningenglish.data.model.SummaContentResponse
 
 
 class LearningRepository {
@@ -139,18 +140,16 @@ class LearningRepository {
         startLevel: Float,
         endLevel: Float
     ): List<Pair<String, Int>> {
-        val response = RetrofitInstance.api.searchByTopicText(
-            userId = userId,
-            start = startLevel,
-            end = endLevel,
-            option = "library",
-            text = topicText
-        )
-        return if (response.isSuccessful) {
-            response.body()?.let {
-                listOf(it.contentType to it.contentId)  // 리스트로 감싸기
-            } ?: emptyList()
-        } else {
+        return try {
+            val result = RetrofitInstance.api.searchByTopicText(
+                userId = userId,
+                start = startLevel,
+                end = endLevel,
+                option = "library",
+                text = topicText
+            )
+            result.map { it.contentType to it.contentId }
+        } catch (e: Exception) {
             emptyList()
         }
     }
@@ -163,7 +162,7 @@ class LearningRepository {
         endLevel: Float
     ): List<Pair<String, Int>> {
         return try {
-            val response = RetrofitInstance.api.getSimilarContents(
+            val result = RetrofitInstance.api.getSimilarContents(
                 contentType = contentType,
                 contentId = contentId,
                 userId = userId,
@@ -171,15 +170,21 @@ class LearningRepository {
                 endLevel = endLevel,
                 option = "library"
             )
-            if (response.isSuccessful) {
-                response.body()?.let {
-                    listOf(it.contentType to it.contentId)
-                } ?: emptyList()
-            } else {
-                emptyList()
-            }
+            result.map { it.contentType to it.contentId }
         } catch (e: Exception) {
             emptyList()
+        }
+    }
+
+    //축약 콘텐츠 조회
+    suspend fun fetchSummaContent(
+        contentType: String,
+        contentId: Int
+    ): SummaContentResponse? {
+        return try {
+            RetrofitInstance.api.getSummaContent(contentType, contentId)
+        } catch (e: Exception) {
+            null
         }
     }
 

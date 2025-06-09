@@ -76,7 +76,7 @@ fun PronunciationHistoryScreen(
                     colors = CardDefaults.cardColors(containerColor = Color(0xFFF9F9F9))
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
-                        Text("문장: ${item.sentenceId}", style = MaterialTheme.typography.bodyMedium)
+                        Text("문장: ${item.sentence}", style = MaterialTheme.typography.bodyMedium)
 
                         Spacer(modifier = Modifier.height(8.dp))
 
@@ -155,62 +155,16 @@ fun PronunciationHistoryScreen(
                                 Spacer(modifier = Modifier.height(8.dp))
                             }
 
-
+                            Text("💬 피드백:", style = MaterialTheme.typography.labelMedium)
+                            val cleanFeedbacks = cleanFeedback(item.feedback.raw)
+                            cleanFeedbacks.take(3).forEach { msg ->
+                                Text("- $msg", style = MaterialTheme.typography.bodySmall)
+                            }
                             /*
-                            listOf(
-                                Triple("정확도", item.accuracyScore, "발음이 정확했는가"),
-                                Triple("유창성", item.fluencyScore, "말이 끊김 없이 자연스럽게 이어졌는가"),
-                                Triple("완성도", item.completenessScore, "단어를 모두 발음했는가"),
-                                Triple("총점", item.pronunciationScore, "전체 종합 평가 점수")
-                            ).forEach { (label, score, description) ->
-                                Column(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .background(Color(0xFFF2F2F2), RoundedCornerShape(8.dp))
-                                        .clickable {
-                                            expandedMetric = if (expandedMetric == label) null else label
-                                        }
-                                        .padding(12.dp)
-                                ) {
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Text(label, style = MaterialTheme.typography.titleSmall)
-                                        Spacer(modifier = Modifier.width(6.dp))
-                                        Icon(
-                                            imageVector = Icons.Default.HelpOutline,
-                                            contentDescription = "도움말",
-                                            tint = Color.Gray
-                                        )
-                                    }
-                                    LinearProgressIndicator(
-                                        progress = (score.toFloat() / 100f).coerceIn(0f, 1f),
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .height(6.dp)
-                                            .padding(vertical = 6.dp),
-                                        color = Color(0xFF6D9886)
-                                    )
-                                    Text("${score.toInt()}점", style = MaterialTheme.typography.bodySmall)
-
-                                    if (expandedMetric == label) {
-                                        Spacer(modifier = Modifier.height(4.dp))
-                                        Box(
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .background(Color.White, RoundedCornerShape(6.dp))
-                                                .padding(10.dp)
-                                        ) {
-                                            Text("! $description", style = MaterialTheme.typography.bodyMedium)
-                                        }
-                                    }
-                                }
-
-                                Spacer(modifier = Modifier.height(8.dp))
-                            }*/
-
-                            Text("💬 피드백:", style = MaterialTheme.typography.labelMedium)
                             item.feedback.raw.lines().take(3).forEach { msg ->
                                 Text("- $msg", style = MaterialTheme.typography.bodySmall)
                             }
+                             */
 
                             Spacer(modifier = Modifier.height(8.dp))
                             Text("평가 시각: ${item.evaluatedAt}", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
@@ -221,100 +175,13 @@ fun PronunciationHistoryScreen(
         }
     }
 }
-/*
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun PronunciationHistoryScreen(
-    viewModel: LearningViewModel,
-    navController: NavController,
-    userId: Int,
-    contentType: String,
-    contentId: Int
-) {
-    val history by viewModel.pronunciationHistory.collectAsState()
-    var expandedId by remember { mutableStateOf<Int?>(null) }
 
-
-    LaunchedEffect(Unit) {
-        viewModel.loadPronunciationHistory(userId, contentType, contentId)
-    }
-
-    Scaffold(
-        topBar = {
-            TopAppBar(title = { Text("📝 발음 평가 기록") })
-        }
-    ) { padding ->
-        LazyColumn(modifier = Modifier.padding(padding).padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            items(history) { item ->
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color(0xFFF9F9F9))
-                ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Text("문장: ${item.sentenceId}", style = MaterialTheme.typography.bodyMedium)
-
-                        Spacer(modifier = Modifier.height(8.dp))
-
-                        TextButton(
-                            onClick = {
-                                expandedId = if (expandedId == item.sentenceId) null else item.sentenceId
-                            },
-                            modifier = Modifier.align(Alignment.End)
-                        ) {
-                            Text(if (expandedId == item.sentenceId) "닫기" else "자세히")
-                            Spacer(Modifier.width(4.dp))
-                            Icon(
-                                imageVector = if (expandedId == item.sentenceId) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                                contentDescription = null
-                            )
-                        }
-
-                        if (expandedId == item.sentenceId) {
-                            Spacer(modifier = Modifier.height(8.dp))
-
-                            listOf(
-                                Triple("정확도", item.accuracyScore, "발음이 정확했는가"),
-                                Triple("유창성", item.fluencyScore, "말이 끊김 없이 자연스럽게 이어졌는가"),
-                                Triple("완성도", item.completenessScore, "단어를 모두 발음했는가"),
-                                Triple("총점", item.pronunciationScore, "전체 종합 평가 점수")
-                            ).forEach { (label, score, description) ->
-                                Column(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .background(Color(0xFFF2F2F2), RoundedCornerShape(8.dp))
-                                        .padding(12.dp)
-                                ) {
-                                    Text("$label", style = MaterialTheme.typography.labelMedium)
-                                    LinearProgressIndicator(
-                                        progress = (score.toFloat() / 100f).coerceIn(0f, 1f),
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .height(6.dp)
-                                            .padding(vertical = 4.dp),
-                                        color = Color(0xFF6D9886)
-                                    )
-                                    //
-                                    //Text(description, style = MaterialTheme.typography.bodySmall, color = Color.Gray)
-                                }
-
-                                Spacer(modifier = Modifier.height(8.dp))
-                            }
-
-                            Text("💬 피드백:", style = MaterialTheme.typography.labelMedium)
-                            item.feedback.raw.lines().take(3).forEach { msg ->
-                                Text("- $msg", style = MaterialTheme.typography.bodySmall)
-                            }
-
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Text("평가 시각: ${item.evaluatedAt}", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
-                        }
-                    }
-                }
-            }
-        }
-    }
+fun cleanFeedback(raw: String): List<String> {
+    return raw
+        .removePrefix("\"")
+        .removeSuffix("\"")
+        .replace("\\n", "\n")  // \n을 진짜 줄바꿈으로 변환
+        .split("\n")           // 줄바꿈 기준으로 분리
+        .map { it.trim() }
+        .filter { it.isNotBlank() }
 }
-*/

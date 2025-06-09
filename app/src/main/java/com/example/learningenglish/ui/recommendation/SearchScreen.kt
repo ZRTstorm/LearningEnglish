@@ -20,6 +20,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -28,6 +29,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.example.learningenglish.data.model.SummaContentResponse
 import com.example.learningenglish.viewmodel.LearningViewModel
 import kotlinx.coroutines.launch
 
@@ -103,22 +105,54 @@ fun SearchScreen(
             Spacer(modifier = Modifier.height(16.dp))
 
             LazyColumn {
-                items(searchResults) { result ->
-                    val contentType = result.first
-                    val contentId = result.second
-
-                    Column(modifier = Modifier.padding(vertical = 8.dp)) {
-                        Text("Type: $contentType / ID: $contentId")
-                        Button(onClick = {
-                            coroutineScope.launch {
-                                viewModel.addContentToLibrary(contentType, contentId, userId)
-                            }
-                        }) {
-                            Text("라이브러리에 추가")
-                        }
-                    }
+                items(searchResults) { (contentType, contentId) ->
+                    SearchResultCard(
+                        contentType = contentType,
+                        contentId = contentId,
+                        userId = userId,
+                        viewModel = viewModel
+                    )
                 }
             }
         }
     }
 }
+
+@Composable
+fun SearchResultCard(
+    contentType: String,
+    contentId: Int,
+    userId: Int,
+    viewModel: LearningViewModel
+) {
+    val coroutineScope = rememberCoroutineScope()
+    var summa by remember { mutableStateOf<SummaContentResponse?>(null) }
+
+    LaunchedEffect(contentType, contentId) {
+        summa = viewModel.fetchSummaContent(contentType, contentId)
+    }
+
+    Column(modifier = Modifier
+        .fillMaxWidth()
+        .padding(vertical = 8.dp)) {
+        if (summa != null) {
+            Text("🎬 제목: ${summa!!.title}", style = MaterialTheme.typography.titleMedium)
+            Text("📊 텍스트 점수: ${"%.1f".format(summa!!.textGrade)} / 사운드 점수: ${"%.1f".format(summa!!.soundGrade)}")
+            Text("🔗 링크: ${summa!!.videoUrl}", style = MaterialTheme.typography.bodySmall)
+        } else {
+            Text("정보 불러오는 중...", style = MaterialTheme.typography.bodySmall)
+        }
+
+        Spacer(modifier = Modifier.height(4.dp))
+
+        Button(onClick = {
+            coroutineScope.launch {
+                viewModel.addContentToLibrary(contentType, contentId, userId)
+            }
+        }) {
+            Text("라이브러리에 추가")
+        }
+    }
+}
+
+

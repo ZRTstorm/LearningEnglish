@@ -179,6 +179,15 @@ data class ContentPreview(
     val body: String
 ) : Serializable
 
+data class SummaContentResponse(
+    val contentType: String,
+    val contentId: Int,
+    val textGrade: Double,
+    val soundGrade: Double,
+    val videoUrl: String,
+    val title: String
+)
+
 
 //quiz-order
 data class OrderSentence(
@@ -323,7 +332,8 @@ data class DictationHistoryItem(
     val grammarScore: Double,
     val similarityScore: Double,
     val feedback: String,
-    val createdAt: String
+    val createdAt: String,
+    val sentence: String
 )
 
 data class PronunciationHistoryItem(
@@ -333,7 +343,8 @@ data class PronunciationHistoryItem(
     val completenessScore: Double,
     val pronunciationScore: Double,
     val feedback: FeedbackWrapper,
-    val evaluatedAt: String
+    val evaluatedAt: String,
+    val sentence: String
 )
 
 data class FeedbackWrapper(

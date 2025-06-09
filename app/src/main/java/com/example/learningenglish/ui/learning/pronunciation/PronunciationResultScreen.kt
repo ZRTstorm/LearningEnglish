@@ -4,8 +4,10 @@ import android.media.MediaPlayer
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
@@ -52,7 +54,8 @@ fun PronunciationResultScreen(
         Column(
             modifier = Modifier
                 .padding(padding)
-                .padding(16.dp),
+                .padding(16.dp)
+                .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             if (evalResult == null || startResult == null) {
@@ -162,10 +165,28 @@ fun PronunciationResultScreen(
             }
 
             Text("💬 피드백:", style = MaterialTheme.typography.labelLarge)
+            evalResult.feedbackMessages
+                .take(3)
+                .flatMap { raw ->
+                    raw
+                        .replace("\\\"", "\"")      // \" → "
+                        .replace("\\n", "\n")       // 줄바꿈 해석
+                        .removePrefix("\"")
+                        .removeSuffix("\"")
+                        .split("\n")
+                        .map { it.trim() }
+                        .filter { it.isNotBlank() }
+                }
+                .forEach { line ->
+                    Text("• $line", style = MaterialTheme.typography.bodyMedium)
+                }
+
+            /* raw피드백
             val feedbacks = evalResult.feedbackMessages ?: emptyList()
             feedbacks.take(3).forEach { msg ->
                 Text("- $msg")
             }
+             */
 
             Spacer(modifier = Modifier.height(24.dp))
 
@@ -188,4 +209,14 @@ fun PronunciationResultScreen(
             }
         }
     }
+}
+
+fun cleanFeedback(raw: String): List<String> {
+    return raw
+        .removePrefix("\"")
+        .removeSuffix("\"")
+        .replace("\\n", "\n") // 이스케이프된 줄바꿈 해석
+        .split("\n")          // 줄바꿈 기준 분리
+        .map { it.trim() }
+        .filter { it.isNotBlank() }
 }

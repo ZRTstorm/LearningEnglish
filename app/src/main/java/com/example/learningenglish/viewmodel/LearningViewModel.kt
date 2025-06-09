@@ -31,6 +31,7 @@ import com.example.learningenglish.data.model.PronunciationStartResponse
 import com.example.learningenglish.data.model.QuizData
 import com.example.learningenglish.data.model.QuizHistoryItem
 import com.example.learningenglish.data.model.SubtitleSentence
+import com.example.learningenglish.data.model.SummaContentResponse
 import com.example.learningenglish.data.model.TextDetailResponse
 import com.example.learningenglish.data.model.UserLibraryContent
 import com.example.learningenglish.data.model.VideoDetailResponse
@@ -398,11 +399,31 @@ class LearningViewModel(
         endLevel: Float
     ) {
         viewModelScope.launch {
-            val result = repository.getSimilarContents(contentType, contentId, userId, startLevel, endLevel)
-            _similarContents.value = result
-
+            _similarContents.value = repository.getSimilarContents(
+                contentType = contentType,
+                contentId = contentId,
+                userId = userId,
+                startLevel = startLevel,
+                endLevel = endLevel
+            )
         }
     }
+
+    //축약 콘텐츠 조회
+
+    private val _summaContent = MutableStateFlow<SummaContentResponse?>(null)
+    val summaContent: StateFlow<SummaContentResponse?> = _summaContent
+
+    fun loadSummaContent(contentType: String, contentId: Int) {
+        viewModelScope.launch {
+            _summaContent.value = repository.fetchSummaContent(contentType, contentId)
+        }
+    }
+
+    suspend fun fetchSummaContent(contentType: String, contentId: Int): SummaContentResponse? {
+        return repository.fetchSummaContent(contentType, contentId)
+    }
+
 
 
     fun addContentToLibrary(contentType: String, contentId: Int, userId: Int) {
@@ -415,6 +436,7 @@ class LearningViewModel(
         }
     }
 
+    /*
     fun searchTopicContents(
         userId: Int,
         topicText: String,
@@ -443,6 +465,8 @@ class LearningViewModel(
             }
         }
     }
+
+     */
 
 
 
