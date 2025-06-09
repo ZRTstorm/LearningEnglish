@@ -105,7 +105,30 @@ public class PronunciationService {
         return new PronunciationStartResponseDto(text, selected.getId(), contents, level, contentsLibrary.getId());
     }
 
+    public PronunciationStartResponseDto getTestPronoun(Long testOrder, String contentType, Long contentId) {
+        List<Sentence> sentenceList = sentenceRepository.findAllWithLevel(contentType, contentId);
+        if (sentenceList.isEmpty()) throw new IllegalStateException();
 
+        int sentenceIdx = 0;
+        if (testOrder == 3) sentenceIdx = (sentenceList.size() / 2) - 1;
+        else if (testOrder == 4) sentenceIdx = sentenceList.size() - 2;
+
+        Sentence selected = sentenceList.get(sentenceIdx);
+        String text = selected.getText();
+
+        Optional<TtsSentence> existed = ttsSentenceRepository.findBySentenceIdAndSentenceType(selected.getId(), SentenceType.IMPORTANT);
+        List<TtsSentenceItemDto> contents;
+
+        if (existed.isPresent()) {
+            TtsSentence tts = existed.get();
+            contents = List.of(new TtsSentenceItemDto(text, tts.getFilePathUs(), tts.getFilePathGb(), tts.getFilePathAu()));
+        } else {
+            TtsSentence generated = ttsService.generateTtsFiles(selected.getId(), SentenceType.IMPORTANT, text);
+            contents = List.of(new TtsSentenceItemDto(text, generated.getFilePathUs(), generated.getFilePathGb(), generated.getFilePathAu()));
+        }
+
+        return new PronunciationStartResponseDto(text, selected.getId(), contents, selected.getSentenceLevel().getSpeechGrade(), 0L);
+    }
 
 
     public PronunciationEvalResponseDto evaluatePronunciation(
@@ -226,9 +249,6 @@ public class PronunciationService {
                 feedbackMessages
         );
     }
-
-
-
 
 
     private static final Map<String, String> phonemeFeedbackMap = Map.ofEntries(

@@ -36,4 +36,10 @@ public interface SentenceRepository extends JpaRepository<Sentence, Long> {
             "ORDER BY s.lastAccessedAt ASC NULLS FIRST")
     List<Sentence> findByContentAndTypeOrderByLastAccessed(@Param("contentId") Long contentId,
                                                            @Param("contentType") String contentType);
+
+    @Query("select s from Sentence s " +
+            "inner join fetch s.sentenceLevel sl " +
+            "where s.contentType = :contentType and s.contentId = :contentId " +
+            "order by sl.speechGrade ASC")
+    List<Sentence> findAllWithLevel(@Param("contentType") String contentType, @Param("contentId") Long contentId);
 }

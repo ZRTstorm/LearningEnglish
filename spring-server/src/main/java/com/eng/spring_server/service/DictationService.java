@@ -19,6 +19,7 @@ import org.springframework.stereotype.Service;
 import org.languagetool.JLanguageTool;
 import org.languagetool.language.AmericanEnglish;
 import org.languagetool.rules.RuleMatch;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
@@ -333,7 +334,81 @@ public class DictationService {
                         .build())
                 .collect(Collectors.toList());
     }
+    public DictationStartResponseDto getTestDictation(Long testOrder, String contentType, Long contentId) {
+        List<Sentence> sentenceList = sentenceRepository.findAllWithLevel(contentType, contentId);
+        if (sentenceList.isEmpty()) throw new IllegalStateException();
 
+        int sentenceIdx = 0;
+        if (testOrder == 1) sentenceIdx = sentenceList.size() / 2;
+        else if (testOrder == 2) sentenceIdx = sentenceList.size() - 1;
 
+        Sentence selected = sentenceList.get(sentenceIdx);
+        String text = selected.getText();
+
+        Optional<TtsSentence> existed = ttsSentenceRepository.findBySentenceIdAndSentenceType(selected.getId(), SentenceType.IMPORTANT);
+        List<TtsSentenceItemDto> contents;
+
+        if (existed.isPresent()) {
+            TtsSentence tts = existed.get();
+            contents = List.of(new TtsSentenceItemDto(text, tts.getFilePathUs(), tts.getFilePathGb(), tts.getFilePathAu()));
+        } else {
+            TtsSentence generated = ttsService.generateTtsFiles(selected.getId(), SentenceType.IMPORTANT, text);
+            contents = List.of(new TtsSentenceItemDto(text, generated.getFilePathUs(), generated.getFilePathGb(), generated.getFilePathAu()));
+        }
+
+        return new DictationStartResponseDto(text, selected.getId(), contents, selected.getSentenceLevel().getSpeechGrade(), 0L);
+    }
+
+    public DictationEvalResponseDto evalTestDictation(DictationEvalRequestDto dto) {
+        String reference = sentenceRepository.findById(dto.getSentenceId())
+                .orElseThrow(IllegalStateException::new)
+                .getText();
+
+        String userInput = dto.getUserText();
+        int editDistance = calculateEditDistance(reference, userInput);
+        double accuracyScore = calculateAccuracy(reference, userInput);
+        double similarityScore = 1.0 - ((double) editDistance / reference.length());
+        double grammarScore = 1.0;
+
+        List<String> incorrectWords = new ArrayList<>();
+        List<String> feedbackMessages = new ArrayList<>();
+
+        try {
+            JLanguageTool langTool = new JLanguageTool(new AmericanEnglish());
+            List<RuleMatch> matches = langTool.check(userInput);
+            grammarScore = 1.0 - ((double) matches.size() / Math.max(1, userInput.split(" ").length));
+
+            for (RuleMatch match : matches) {
+                String ruleId = match.getRule().getId();
+                String feedback;
+
+                switch (ruleId) {
+                    case "MORFOLOGIK_RULE_EN_US":
+                    case "DID_YOU_MEAN":
+                        String wrongWord = userInput.substring(match.getFromPos(), match.getToPos());
+                        String suggestion = match.getSuggestedReplacements().isEmpty() ? "수정안" : match.getSuggestedReplacements().get(0);
+                        feedback = "'" + wrongWord + "'는 '" + suggestion + "'의 오타일 수 있어요.";
+                        break;
+                    default:
+                        String rawMessage = match.getMessage();
+                        String cleanedMessage = cleanSuggestionTags(rawMessage);
+                        feedback = koreanFeedback(ruleId);
+                        if (feedback == null) {
+                            feedback = "문법 오류가 있습니다: " + cleanedMessage;
+                        }
+                        break;
+                }
+
+                feedbackMessages.add(feedback);
+                if (!match.getSuggestedReplacements().isEmpty()) {
+                    incorrectWords.add(match.getSuggestedReplacements().get(0));
+                }
+            }
+        } catch (IOException e) {
+            feedbackMessages.add("LanguageTool 분석 중 오류가 발생했습니다.");
+        }
+
+        return new DictationEvalResponseDto(reference, userInput, accuracyScore, editDistance, incorrectWords, feedbackMessages, grammarScore);
+    }
 
 }

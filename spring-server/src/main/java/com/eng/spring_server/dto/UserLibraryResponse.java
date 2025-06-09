@@ -18,10 +18,20 @@ public class UserLibraryResponse {
     private Long contentId;
 
     // User Content Title
+    private String userTitle;
     private String title;
     private LocalDateTime uploadDate;
 
     // content Level
     private float textGrade;
     private float soundGrade;
+
+    // Progress
+    private float progress = 0f;
+    private Long writeNum = 0L;
+    private Double writeScore = 0d;
+    private Long speechNum = 0L;
+    private Double speechScore = 0d;
+    private Long quizNum = 0L;
+    private Double quizScore = 0d;
 }

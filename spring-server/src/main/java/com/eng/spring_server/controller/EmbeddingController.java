@@ -59,7 +59,7 @@ public class EmbeddingController {
     @GetMapping("search/service/{contentType}/{contentId}/{userId}")
     public ResponseEntity<?> similarVectors(@PathVariable String contentType, @PathVariable Long contentId, @PathVariable Long userId,
                                             @RequestParam float start, @RequestParam float end, @RequestParam String option) {
-        ContentIdDto response = embeddingService.similarVector(userId, start, end, new ContentIdDto(contentType, contentId), option);
+        List<ContentIdDto> response = embeddingService.similarVector(userId, start, end, new ContentIdDto(contentType, contentId), option);
 
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
@@ -68,7 +68,7 @@ public class EmbeddingController {
     @GetMapping("search/texts/{userId}")
     public ResponseEntity<?> searchTextVectors(@PathVariable Long userId, @RequestParam float start, @RequestParam float end,
                                                @RequestParam String option, @RequestParam String text) {
-        ContentIdDto response = embeddingService.searchText(userId, start, end, text, option);
+        List<ContentIdDto> response = embeddingService.searchText(userId, start, end, text, option);
 
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }

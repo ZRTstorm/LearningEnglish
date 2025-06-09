@@ -6,11 +6,14 @@ import com.eng.spring_server.domain.contents.ContentsLibrary;
 import com.eng.spring_server.domain.contents.TextContents;
 import com.eng.spring_server.domain.contents.TextTime;
 import com.eng.spring_server.domain.contents.VideoContents;
+import com.eng.spring_server.domain.dictation.DictationList;
 import com.eng.spring_server.dto.*;
 import com.eng.spring_server.dto.contents.BasicResponse;
 import com.eng.spring_server.dto.contents.ContentsResponseDto;
 import com.eng.spring_server.dto.contents.TimestampDto;
 import com.eng.spring_server.repository.*;
+import com.eng.spring_server.repository.dictation.DictationListRepository;
+import com.eng.spring_server.repository.pronunciation.PronunciationListRepository;
 import com.eng.spring_server.util.YoutubeUtil;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -37,6 +40,9 @@ public class AllContentsService {
     private final TextTimeRepository textTimeRepository;
     private final UsersRepository usersRepository;
     private final ContentsLibraryRepository contentsLibraryRepository;
+    private final DictationListRepository dictationListRepository;
+    private final PronunciationListRepository pronunciationListRepository;
+    private final QuizDataRepository quizDataRepository;
 
     // VideoContents 처리 작업
     @Transactional
@@ -293,11 +299,34 @@ public class AllContentsService {
 
                     response.setLibraryId(item.getId());
                     response.setContentType(item.getContentsType());
-                    response.setTitle(item.getTitle());
+                    response.setUserTitle(item.getTitle());
                     response.setUploadDate(item.getDate());
+                    response.setProgress(item.getProgress());
+
+                    CountAvgProjection writeSet = dictationListRepository.findCountAndAverageScore(item.getId());
+                    Long writeCount = writeSet.getCount();
+                    if (writeCount != 0L) {
+                        response.setWriteNum(writeCount);
+                        response.setWriteScore(writeSet.getAvg());
+                    }
+
+                    CountAvgProjection speechSet = pronunciationListRepository.findCountAndAvgScores(item.getId());
+                    Long pCount = speechSet.getCount();
+                    if (pCount != 0L) {
+                        response.setSpeechNum(pCount);
+                        response.setSpeechScore(speechSet.getAvg());
+                    }
+
+                    CountAvgProjection countAndAvgScore = quizDataRepository.findCountAndAvgScore(item.getId());
+                    Long quizCount = countAndAvgScore.getCount();
+                    if (quizCount != 0L) {
+                        response.setQuizNum(quizCount);
+                        response.setQuizScore(countAndAvgScore.getAvg());
+                    }
 
                     if ("video".equalsIgnoreCase(item.getContentsType()) && item.getVideoContents() != null) {
                         response.setContentId(item.getVideoContents().getId());
+                        response.setTitle(removeMp3Suffix(item.getVideoContents().getTitle()));
                         response.setTextGrade(item.getVideoContents().getTextGrade());
                         response.setSoundGrade(item.getVideoContents().getSoundGrade());
                     } else if ("text".equalsIgnoreCase(item.getContentsType()) && item.getTextContents() != null) {
@@ -378,7 +407,34 @@ public class AllContentsService {
         contents.setProgress(progress);
     }
 
+    @Transactional(readOnly = true)
+    public ContentsSummaDto getContentSumma(String contentType, Long contentId) {
+        if (!contentType.equalsIgnoreCase("video")) throw new IllegalStateException();
+
+        Optional<VideoContents> byId = videoContentsRepository.findById(contentId);
+        if (byId.isEmpty()) throw new IllegalStateException();
+
+        VideoContents videoContents = byId.get();
+        ContentsSummaDto dto = new ContentsSummaDto();
+
+        dto.setContentType(contentType);
+        dto.setContentId(contentId);
+        dto.setTextGrade(videoContents.getTextGrade());
+        dto.setSoundGrade(videoContents.getSoundGrade());
+        dto.setVideoUrl(buildYoutubeUrl(videoContents.getVideoKey()));
+        dto.setTitle(removeMp3Suffix(videoContents.getTitle()));
+
+        return dto;
+    }
+
     private String buildYoutubeUrl(String videoId) {
         return "https://www.youtube.com/watch?v=" + videoId;
+    }
+
+    private String removeMp3Suffix(String str) {
+        if (str != null && str.toLowerCase().endsWith(".mp3")) {
+            return str.substring(0, str.length() - 4);
+        }
+        return str;
     }
 }

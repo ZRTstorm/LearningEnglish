@@ -2,10 +2,7 @@ package com.eng.spring_server.controller;
 
 import com.eng.spring_server.domain.contents.TextContents;
 import com.eng.spring_server.domain.contents.VideoContents;
-import com.eng.spring_server.dto.AudioRequest;
-import com.eng.spring_server.dto.TextRequest;
-import com.eng.spring_server.dto.TextsResponseDto;
-import com.eng.spring_server.dto.UserLibraryResponse;
+import com.eng.spring_server.dto.*;
 import com.eng.spring_server.dto.contents.ContentIdResponse;
 import com.eng.spring_server.dto.contents.ContentsResponseDto;
 import com.eng.spring_server.service.AllContentsService;
@@ -136,5 +133,13 @@ public class AllContentsController {
         allContentsService.updateProgress(libraryId, progress);
 
         return ResponseEntity.status(HttpStatus.OK).body("ProgressUpdate");
+    }
+
+    @Operation(summary = "콘텐츠 축약 조회", description = "비디오 콘텐츠 정보 축약 조회 한다")
+    @GetMapping("/summaContent/{contentType}/{contentId}")
+    public ResponseEntity<?> searchSummaContent(@PathVariable String contentType, @PathVariable Long contentId) {
+        ContentsSummaDto response = allContentsService.getContentSumma(contentType, contentId);
+
+        return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 }
