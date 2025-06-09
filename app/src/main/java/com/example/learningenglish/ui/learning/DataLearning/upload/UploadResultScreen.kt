@@ -71,16 +71,16 @@ fun UploadResultScreen(
                 DataLearningMainScreen(
                     learningResponse = response,
                     navController = navController,
-                    goalHours = goalHours,
-                    goalMinutes = goalMinutes
+                    //goalHours = goalHours,
+                    //goalMinutes = goalMinutes
                 )
             }
             "VIDEO" -> {
                 VideoLearningMainScreen(
                     learningResponse = response,
                     navController = navController,
-                    goalHours = goalHours,
-                    goalMinutes = goalMinutes
+                    //goalHours = goalHours,
+                    //goalMinutes = goalMinutes
                 )
             }
         }

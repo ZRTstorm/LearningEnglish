@@ -27,27 +27,15 @@ import com.google.firebase.auth.FirebaseAuth
 @Composable
 fun LearningStartScreen(
     navController: NavController,
-    goalHours: Int,
-    goalMinutes: Int,
+    //goalHours: Int,
+    //goalMinutes: Int,
     selectedLearningType: String
 ) {
     var elapsedSeconds by remember { mutableStateOf(0) }
     val characterX = remember { Animatable(0f) }
-    val totalSeconds = (goalHours * 60 + goalMinutes) * 60
+    //val totalSeconds = (goalHours * 60 + goalMinutes) * 60
 
     val userUid = FirebaseAuth.getInstance().currentUser?.uid
-
-    // 시간 흐르게 + 캐릭터 이동
-    LaunchedEffect(Unit) {
-        while (elapsedSeconds < totalSeconds) {
-            delay(1000)
-            elapsedSeconds++
-            characterX.animateTo(
-                targetValue = (elapsedSeconds.toFloat() / totalSeconds),
-                animationSpec = tween(durationMillis = 1000)
-            )
-        }
-    }
 
     val screenWidth = LocalConfiguration.current.screenWidthDp.dp
 
@@ -64,10 +52,12 @@ fun LearningStartScreen(
 
         Spacer(modifier = Modifier.height(24.dp))
 
+        /*
         Text(
             text = "목표 시간: ${goalHours}시간 ${goalMinutes}분",
             style = MaterialTheme.typography.bodyLarge
         )
+         */
 
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -83,7 +73,7 @@ fun LearningStartScreen(
 
                 when (selectedLearningType) {
                     "자료 학습" -> navController.navigate("datalearningstart")
-                    "받아쓰기" -> navController.navigate("dictation")
+                    "받아쓰기" -> navController.navigate("dictation_setup")
                     "발음 평가" -> navController.navigate("pronunciation")
                     "라이브러리" -> navController.navigate("library")
                     "단어장" -> {

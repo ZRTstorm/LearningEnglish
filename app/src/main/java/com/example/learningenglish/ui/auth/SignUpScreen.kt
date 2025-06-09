@@ -145,6 +145,18 @@ fun SignUpScreen(
 
         Spacer(modifier = Modifier.height(24.dp))
 
+        OutlinedTextField(
+            value = nickname,
+            onValueChange = { nickname = it },
+            label = { Text("닉네임") },
+            leadingIcon = { Icon(Icons.Default.Person, contentDescription = null) }, // 닉네임에 적합한 아이콘
+            modifier = Modifier.fillMaxWidth(),
+            keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Text), // 텍스트 입력
+            singleLine = true
+        )
+
+        Spacer(modifier = Modifier.height(24.dp))
+
         Button(
             onClick = { trySignUp() },
             modifier = Modifier.fillMaxWidth(),
@@ -155,15 +167,7 @@ fun SignUpScreen(
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        OutlinedTextField(
-            value = nickname,
-            onValueChange = { nickname = it },
-            label = { Text("닉네임") },
-            leadingIcon = { Icon(Icons.Default.Person, contentDescription = null) }, // 닉네임에 적합한 아이콘
-            modifier = Modifier.fillMaxWidth(),
-            keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Text), // 텍스트 입력
-            singleLine = true
-        )
+
 
     }
 }

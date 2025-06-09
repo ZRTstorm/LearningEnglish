@@ -13,65 +13,65 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 
-class AppViewModel(context: Context) : ViewModel() {
-    private val userPrefs = UserPreferencesDataStore(context)
-    private val _userId = MutableStateFlow<String?>(null)
-    val userId: StateFlow<String?> = _userId
 
-    init {
-        viewModelScope.launch {
-            userPrefs.getUserId().collect { id ->
-                _userId.value = id
-            }
-        }
-    }
-}
-
-fun logout(context: Context) {
-    FirebaseAuth.getInstance().signOut()
-    CoroutineScope(Dispatchers.IO).launch {
-        UserPreferencesDataStore(context).clearUserId()
-    }
-}
-
-// ✅ 3. getIdToken 최신화 방식
-suspend fun getFreshIdToken(): String? {
-    val user = FirebaseAuth.getInstance().currentUser
-    return user?.getIdToken(true)?.await()?.token
-}
-
-
-// ✅ 5. authenticateWithServer 함수 예시 (AuthViewModel)
 class AuthViewModel(
     private val authManager: AuthManager,
     private val userPrefs: UserPreferencesDataStore
 ) : ViewModel() {
 
-    fun authenticateWithServer() {
+    private val _userName = MutableStateFlow("사용자")
+    val userName: StateFlow<String> = _userName
+
+    init {
+        loadUserDisplayName()
+    }
+
+    fun loadUserDisplayName() {
+        viewModelScope.launch {
+            val firebaseUser = authManager.getFirebaseUser()
+            val nickname = userPrefs.getUserNickname().firstOrNull()
+            val displayName = firebaseUser?.displayName
+
+            _userName.value = when {
+                !nickname.isNullOrBlank() -> nickname
+                !displayName.isNullOrBlank() -> displayName
+                else -> "사용자"
+            }
+        }
+    }
+
+    fun authenticateWithServer(onSuccess: () -> Unit, onFailure: (String) -> Unit) {
         viewModelScope.launch {
             val idToken = authManager.getIdToken()
+            Log.d("AuthToken", "ID Token: $idToken")
             if (idToken != null) {
                 try {
                     val response = RetrofitClient.authApiService.sendIdToken(TokenRequest(idToken))
+                    Log.d("ServerAuth", "HTTP status: ${response.code()}")
+                    Log.d("ServerAuth", "Response body: ${response.body()}")
+
                     if (response.isSuccessful) {
-                        val userId = response.body()?.userId
+                        val userId: Int? = response.body()?.userId
                         Log.d("ServerAuth", "userId: $userId")
 
-                        response.body()?.userId?.let { userId ->
+                        if (userId != null) {
                             userPrefs.saveUserId(userId)
+                            onSuccess()
+                        } else {
+                            onFailure("서버에서 userId를 받지 못했습니다.")
                         }
-
                     } else {
-                        Log.e("ServerAuth", "인증 실패: ${response.code()} ${response.errorBody()?.string()}")
+                        onFailure("서버 응답 실패: ${response.code()}")
                     }
                 } catch (e: Exception) {
-                    Log.e("ServerAuth", "네트워크 오류: ${e.localizedMessage}")
+                    onFailure("네트워크 오류: ${e.localizedMessage}")
                 }
             } else {
-                Log.e("ServerAuth", "ID 토큰이 null입니다.")
+                onFailure("ID 토큰이 null입니다.")
             }
         }
     }
@@ -86,40 +86,3 @@ class AuthViewModel(
 
 }
 
-
-/*
-class AuthViewModel(private val authManager: AuthManager) : ViewModel() {
-
-    private val _userId = MutableStateFlow<String?>(null)
-    val userId: StateFlow<String?> = _userId
-
-    private val _authError = MutableStateFlow<String?>(null)
-    val authError: StateFlow<String?> = _authError
-
-    fun authenticateWithServer() {
-        viewModelScope.launch {
-            val idToken = authManager.getIdToken()
-
-            if (idToken != null) {
-                try {
-                    val response = RetrofitClient.authApiService.sendIdToken(TokenRequest(idToken))
-                    if (response.isSuccessful) {
-                        _userId.value = response.body()?.userId
-                        Log.d("ServerAuth", "사용자 ID: ${_userId.value}")
-                    } else {
-                        _authError.value = "인증 실패: ${response.code()} ${response.errorBody()?.string()}"
-                        Log.e("ServerAuth", _authError.value ?: "Unknown error")
-                    }
-                } catch (e: Exception) {
-                    _authError.value = "네트워크 오류: ${e.localizedMessage}"
-                    Log.e("ServerAuth", _authError.value ?: "Unknown exception")
-                }
-            } else {
-                _authError.value = "ID 토큰을 가져오지 못했습니다."
-                Log.e("ServerAuth", _authError.value ?: "ID Token Error")
-            }
-        }
-    }
-}
-
- */

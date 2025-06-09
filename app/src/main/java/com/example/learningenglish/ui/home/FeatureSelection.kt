@@ -79,7 +79,7 @@ fun FeatureSelectionScreen(
                 onClick = {
                     when (feature.first) {
                         "자료 학습" -> navController.navigate("datalearningstart")
-                        "받아 쓰기" -> navController.navigate("dictation")
+                        "받아 쓰기" -> navController.navigate("dictation_setup")
                         "발음 평가" -> navController.navigate("pronunciation")
                         "라이브러리" -> navController.navigate("library")
                         "단어장" -> if (userUid != null) {

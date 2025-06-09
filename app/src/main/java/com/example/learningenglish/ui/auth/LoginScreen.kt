@@ -85,10 +85,19 @@ fun LoginScreen(
             coroutineScope.launch {
                 val user = authManager.firebaseAuthWithGoogle(task.result)
                 message = "Google 로그인 성공: ${user?.displayName}"
-                viewModel.authenticateWithServer() // ✅ 서버 인증 요청 추가
-                navController.navigate("home") {
-                    popUpTo("login") { inclusive = true }
-                }
+
+                // 서버 인증 + userId 저장 완료 후에 화면 전환
+                viewModel.authenticateWithServer(
+                    onSuccess = {
+                        navController.navigate("home") {
+                            popUpTo("login") { inclusive = true }
+                        }
+                    },
+                    onFailure = { error ->
+                        Toast.makeText(context, "서버 인증 실패: $error", Toast.LENGTH_SHORT).show()
+                    }
+                )
+
             }
         } else {
             message = "Google 로그인 실패"
@@ -108,10 +117,16 @@ fun LoginScreen(
             if (task.isSuccessful) {
                 val user = auth.currentUser
                 user?.let {
-                    viewModel.authenticateWithServer() // ✅ 서버 인증 요청 추가
-                    navController.navigate("home") {
-                        popUpTo("login") { inclusive = true }
-                    }
+                    viewModel.authenticateWithServer(
+                        onSuccess = {
+                            navController.navigate("home") {
+                                popUpTo("login") { inclusive = true }
+                            }
+                        },
+                        onFailure = { error ->
+                            Toast.makeText(context, "서버 인증 실패: $error", Toast.LENGTH_SHORT).show()
+                        }
+                    )
                 }
             } else {
                 Toast.makeText(context, "로그인 실패: ${task.exception?.message}", Toast.LENGTH_SHORT).show()

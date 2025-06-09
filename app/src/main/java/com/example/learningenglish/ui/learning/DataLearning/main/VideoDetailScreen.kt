@@ -10,18 +10,31 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.navigation.NavController
+import com.example.learningenglish.data.model.SubtitleSentence
 import com.example.learningenglish.ui.Word.WordDetailDialog
+import com.example.learningenglish.ui.auth.UserPreferencesDataStore
 import com.example.learningenglish.viewmodel.LearningViewModel
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
+import kotlinx.coroutines.flow.first
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.expandIn
+import androidx.compose.animation.shrinkOut
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.material.icons.filled.Bookmark
+import kotlin.math.roundToInt
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -29,6 +42,7 @@ import com.google.firebase.ktx.Firebase
 fun VideoDetailScreen(
     viewModel: LearningViewModel,
     navController: NavController,
+    contentsType: String,
     contentId: Int
 ) {
     val videoDetail by viewModel.videoDetail.collectAsState()
@@ -41,11 +55,45 @@ fun VideoDetailScreen(
     val wordInfo by viewModel.selectedWordInfo.collectAsState()
     var showWordDialog by remember { mutableStateOf(false) }
 
+    var showExitDialog by remember { mutableStateOf(false) }
 
+    val difficultyRange by remember { mutableStateOf(1f..15f) }
 
+    val context = LocalContext.current
+    val userPrefs = remember { UserPreferencesDataStore(context) }
+    var userId by remember { mutableStateOf(0) }
+    LaunchedEffect(Unit) {
+        viewModel.initRepository(context.applicationContext)
+    }
+
+    LaunchedEffect(Unit) {
+        userId = userPrefs.getUserId().first() ?: 0
+    }
 
     LaunchedEffect(contentId) {
         viewModel.loadVideoDetail(contentId)
+    }
+
+    // VideoDetailScreen.kt에서 진도율 계산해서 ViewModel에 저장
+    LaunchedEffect(videoDetail) {
+        videoDetail?.let { detail ->
+            val subtitleSentences = detail.sentences.map {
+                SubtitleSentence(
+                    originalText = it.originalText,
+                    translatedText = it.translatedText,
+                    startTimeMillis = it.startTimeMillis,
+                    bookmarked = false  // 이 부분은 사용자가 선택 후 업데이트 가능
+                )
+            }
+
+            val totalSentences = subtitleSentences.size
+            val bookmarkedIndex = subtitleSentences.indexOfFirst { it.bookmarked }
+            val progressPercent = if (bookmarkedIndex >= 0) {
+                ((bookmarkedIndex + 1).toFloat() / totalSentences * 100).toInt()
+            } else 0
+
+            viewModel.loadBookmarkedProgress(contentId, subtitleSentences)
+        }
     }
 
     Scaffold(
@@ -55,6 +103,11 @@ fun VideoDetailScreen(
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "뒤로가기")
+                    }
+                },
+                actions = {
+                    IconButton(onClick = { showExitDialog = true }) { //  X 버튼 추가
+                        Icon(Icons.Default.Close, contentDescription = "닫기")
                     }
                 }
             )
@@ -66,6 +119,7 @@ fun VideoDetailScreen(
             }
         } else {
             val detail = videoDetail!!
+
 
             Column(modifier = Modifier
                 .padding(innerPadding)
@@ -90,24 +144,72 @@ fun VideoDetailScreen(
 
                 Spacer(Modifier.height(8.dp))
 
-                Row(Modifier.padding(horizontal = 16.dp)) {
-                    listOf(0.5f, 1.0f, 1.5f, 2.0f).forEach { speed ->
-                        Button(
-                            onClick = { playbackSpeed = speed },
-                            modifier = Modifier.padding(end = 8.dp),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = if (playbackSpeed == speed) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface
-                            )
-                        ) {
-                            Text("${speed}x")
-                        }
-                    }
-                }
-
-                Spacer(Modifier.height(8.dp))
 
                 Text("자막", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(16.dp))
 
+
+                LazyColumn(modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
+                    .padding(horizontal = 16.dp)) {
+                    itemsIndexed(detail.sentences) { index, segment ->
+                        val displayText = when (subtitleMode) {
+                            "EN_ONLY" -> segment.originalText
+                            "BOTH" -> "${segment.originalText}\n${segment.translatedText}"
+                            else -> segment.originalText
+                        }
+
+                        val isHighlighted = segment.startTimeMillis == highlightedMillis
+
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(if (isHighlighted) Color(0xFFE3F2FD) else Color.Transparent)
+                                .padding(vertical = 8.dp)
+                        ) {
+                            Column(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .clickable {
+                                        seekToMillis = segment.startTimeMillis.toFloat() + 500
+                                        highlightedMillis = segment.startTimeMillis
+                                    }
+                            ) {
+                                when (subtitleMode) {
+                                    "EN_ONLY" -> {
+                                        ClickableWordText(sentence = segment.originalText) { word ->
+                                            selectedWord = word
+                                            viewModel.loadWordDetail(word)
+                                            showWordDialog = true
+                                        }
+                                    }
+                                    "BOTH" -> {
+                                        ClickableWordText(sentence = segment.originalText) { word ->
+                                            selectedWord = word
+                                            viewModel.loadWordDetail(word)
+                                            showWordDialog = true
+                                        }
+                                        Spacer(Modifier.height(4.dp))
+                                        Text(text = segment.translatedText)
+                                    }
+                                    else -> {
+                                        Text(text = segment.originalText)
+                                    }
+                                }
+                            }
+
+                            // 북마크 버튼 추가: 이 문장이 몇 번째인지 기반으로 진도율 계산
+                            IconButton(onClick = {
+                                val progress = ((index + 1).toFloat() / detail.sentences.size * 100).roundToInt()
+                                viewModel.setProgressForContent(contentId, progress)
+                            }) {
+                                Icon(Icons.Default.Bookmark, contentDescription = "북마크")
+                            }
+                        }
+                    }
+
+
+                /*
                 LazyColumn(modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
@@ -153,12 +255,49 @@ fun VideoDetailScreen(
                                     Text(text = segment.originalText)
                                 }
                             }
-                        }
+                        }*/
 
+
+                }
+            }
+            FloatingBadge(
+                navController = navController,
+                contentType = contentsType,
+                contentId = contentId
+            )
+        }
+    }
+    // 팝업 UI
+    if (showExitDialog) {
+        AlertDialog(
+            onDismissRequest = { showExitDialog = false },
+            title = { Text("학습을 종료하시겠습니까?") },
+            text = { Text("학습을 종료하고 유사한 콘텐츠를 추천받거나 홈 화면으로 돌아갈 수 있습니다.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    showExitDialog = false
+
+                    navController.navigate("similar_content/$contentsType/$contentId")
+                }) {
+                    Text("유사한 콘텐츠 학습하기")
+                }
+            },
+            dismissButton = {
+                Row {
+                    TextButton(onClick = {
+                        showExitDialog = false
+                        navController.navigate("home")
+                    }) {
+                        Text("홈으로")
+                    }
+                    TextButton(onClick = {
+                        showExitDialog = false
+                    }) {
+                        Text("취소")
                     }
                 }
             }
-        }
+        )
     }
 
     if (showWordDialog && selectedWord.isNotBlank()) {
@@ -166,8 +305,8 @@ fun VideoDetailScreen(
             word = selectedWord,
             onClose = { showWordDialog = false },
             onFavorite = {
-                val uid = Firebase.auth.currentUser?.uid ?: return@WordDetailDialog  // 👉 이건 위에서 받아오도록 처리 필요 (아래 설명 참고)
-                viewModel.addWordToUserVocab(selectedWord, uid)
+                //val uid = Firebase.auth.currentUser?.uid ?: return@WordDetailDialog  // 👉 이건 위에서 받아오도록 처리 필요 (아래 설명 참고)
+                viewModel.addWordToUserVocab(selectedWord, userId)
             },
             wordInfo = viewModel.selectedWordInfo.collectAsState().value
         )
@@ -261,10 +400,4 @@ fun ClickableWordText(
 }
 
 
-/*
-ClickableWordText(sentence.originalText) { selectedWord ->
-    selectedWordState.value = selectedWord
-    showWordDialog.value = true
-}
-*/
 

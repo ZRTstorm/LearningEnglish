@@ -29,8 +29,8 @@ import kotlinx.coroutines.delay
 fun DataLearningMainScreen(
     learningResponse: LearningResponse,
     navController: NavController,
-    goalHours: Int,
-    goalMinutes: Int,
+    //goalHours: Int,
+    //goalMinutes: Int,
 ) {
     var showOriginalOnly by remember { mutableStateOf(true) }
     var showExitDialog by remember { mutableStateOf(false) }
@@ -41,18 +41,9 @@ fun DataLearningMainScreen(
     val screenWidth = LocalConfiguration.current.screenWidthDp.dp
     var elapsedSeconds by remember { mutableStateOf(0) }
     val characterX = remember { Animatable(0f) }
-    val totalSeconds = (goalHours * 60 + goalMinutes) * 60
+    //val totalSeconds = (goalHours * 60 + goalMinutes) * 60
 
-    LaunchedEffect(Unit) {
-        while (elapsedSeconds < totalSeconds) {
-            delay(1000)
-            elapsedSeconds++
-            characterX.animateTo(
-                targetValue = (elapsedSeconds.toFloat() / totalSeconds),
-                animationSpec = tween(durationMillis = 1000)
-            )
-        }
-    }
+
 
     Scaffold(
         topBar = {
@@ -138,11 +129,6 @@ fun DataLearningMainScreen(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            Text(
-                text = "${(elapsedSeconds * 100) / totalSeconds}% 진행 중...",
-                style = MaterialTheme.typography.bodyLarge,
-                modifier = Modifier.align(Alignment.CenterHorizontally)
-            )
         }
     }
 

@@ -52,7 +52,7 @@ fun AllVideoLibraryScreen(
                             .fillMaxWidth()
                             .padding(8.dp)
                             .clickable {
-                                navController.navigate("videodetail/${video.contentId}")
+                                navController.navigate("select_mode/video/${video.contentId}")
                             }
                     ) {
                         Column(modifier = Modifier.padding(16.dp)) {

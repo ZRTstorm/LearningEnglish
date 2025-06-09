@@ -22,7 +22,6 @@ import androidx.navigation.NavController
 import com.example.learningenglish.R
 import com.example.learningenglish.data.model.AudioContent
 import com.example.learningenglish.data.model.LearningResponse
-import com.example.learningenglish.data.model.UploadResponse
 import com.example.learningenglish.data.remote.RetrofitInstance
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -35,8 +34,8 @@ import kotlinx.coroutines.withContext
 fun VideoLearningMainScreen(
     learningResponse: LearningResponse,
     navController: NavController,
-    goalHours: Int,
-    goalMinutes: Int
+    //goalHours: Int,
+    //goalMinutes: Int
 ) {
     var playbackSpeed by remember { mutableStateOf(1.0f) }
     var showOriginalOnly by remember { mutableStateOf(true) }
@@ -48,7 +47,7 @@ fun VideoLearningMainScreen(
     val screenWidth = LocalConfiguration.current.screenWidthDp.dp
     var elapsedSeconds by remember { mutableStateOf(0) }
     val characterX = remember { Animatable(0f) }
-    val totalSeconds = (goalHours * 60 + goalMinutes) * 60
+    // totalSeconds = (goalHours * 60 + goalMinutes) * 60
 
     val timings = learningResponse.timings ?: emptyList()
     var currentTime by remember { mutableStateOf(0L) }
@@ -64,6 +63,7 @@ fun VideoLearningMainScreen(
     // audioContent 상태를 관리
     var audioContent by remember { mutableStateOf<AudioContent?>(null) }
 
+    /*
     LaunchedEffect(Unit) {
         while (elapsedSeconds < totalSeconds) {
             delay(1000)
@@ -74,6 +74,8 @@ fun VideoLearningMainScreen(
             )
         }
     }
+
+     */
 
     // Retrofit을 통해 audio content를 가져오는 함수
     fun fetchAudioContent(audioId: String) {
@@ -267,11 +269,14 @@ fun VideoLearningMainScreen(
 
             Spacer(modifier = Modifier.height(8.dp))
 
+            /*
             Text(
                 text = "${(elapsedSeconds * 100) / totalSeconds}% 진행 중...",
                 style = MaterialTheme.typography.bodyLarge,
                 modifier = Modifier.align(Alignment.CenterHorizontally)
             )
+
+             */
         }
     }
 }

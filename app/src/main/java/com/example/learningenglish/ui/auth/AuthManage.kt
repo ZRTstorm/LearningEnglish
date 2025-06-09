@@ -58,5 +58,10 @@ class AuthManager(private val context: Context) {
         googleSignInClient.signOut().await()
     }
 
+    fun getFirebaseUser(): FirebaseUser? {
+        return FirebaseAuth.getInstance().currentUser
+    }
+
+
 }
 

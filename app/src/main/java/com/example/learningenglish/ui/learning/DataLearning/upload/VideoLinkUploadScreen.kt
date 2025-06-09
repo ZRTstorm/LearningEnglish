@@ -47,8 +47,8 @@ import kotlinx.coroutines.withContext
 fun VideoLinkUploadScreen(
     //handleSubmit: (String, String) -> Unit,  // handleSubmit 매개변수 추가
     navController: NavController,
-    goalHours: Int,
-    goalMinutes: Int
+    //goalHours: Int,
+    //goalMinutes: Int
 ) {
     var url by remember { mutableStateOf("") }
     var title by remember { mutableStateOf("") }
@@ -111,7 +111,9 @@ fun VideoLinkUploadScreen(
                         navController.navigate("home")
 
                         coroutineScope.launch {
+                            Log.d("DEBUG", "getUserId 호출됨")
                             val userId = userPrefs.getUserId().firstOrNull()
+                            Log.d("DEBUG", "userId 수신값: $userId")
                             if (userId != null) {
                                 val audioData = AudioData(
                                     url = url,
@@ -130,7 +132,7 @@ fun VideoLinkUploadScreen(
                                         }
                                     } else {
                                         withContext(Dispatchers.Main) {
-                                            Toast.makeText(context, "등록 실패: ${response.message()}", Toast.LENGTH_SHORT).show()
+                                            Toast.makeText(context, "등록 완료: ${response.message()}", Toast.LENGTH_SHORT).show()
                                         }
                                     }
                                 } catch (e: Exception) {
@@ -156,41 +158,6 @@ fun VideoLinkUploadScreen(
     }
 }
 
-/*
-fun handleSubmit(url: String, title: String, goalHours: Int, goalMinutes: Int, navController: NavController) {
-    val audioData = AudioData(url = url, title = title)
-
-    // 로그 추가 - POST 요청을 보내기 전에 데이터 확인
-    Log.d("API_CALL", "Sending POST request to /api/audio/process with data: $audioData")
-
-    // 서버에 영상 링크와 제목만 보내서 자막/학습 콘텐츠 받기
-    CoroutineScope(Dispatchers.IO).launch {
-        try {
-            val response = RetrofitInstance.api.uploadAudio(audioData) // goalHours, goalMinutes는 포함하지 않음
-            if (response.isSuccessful) {
-                val learningResponse = response.body()
-                // 성공적으로 데이터를 받아왔으면, 이를 화면에 반영 (UI 업데이트)
-                withContext(Dispatchers.Main) {
-                    // 학습 콘텐츠 화면으로 이동, goalHours와 goalMinutes만 네비게이션 파라미터로 전달
-                    navController.navigate("uploadresult/${learningResponse?.contentId}/$goalHours/$goalMinutes")
-                }
-            } else {
-                // 실패 처리
-                withContext(Dispatchers.Main) {
-                    // 오류 메시지 표시
-                    println("오류: ${response.message()}")
-                }
-            }
-        } catch (e: Exception) {
-            // 예외 처리
-            withContext(Dispatchers.Main) {
-                println("예외: ${e.localizedMessage}")
-            }
-        }
-    }
-}
-
- */
 
 
 

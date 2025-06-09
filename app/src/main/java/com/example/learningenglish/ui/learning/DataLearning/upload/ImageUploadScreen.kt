@@ -36,6 +36,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import com.example.learningenglish.R
 import com.example.learningenglish.data.util.recognizeTextFromBitmap
@@ -51,12 +52,124 @@ import kotlinx.coroutines.launch
 fun ImageUploadScreen(
     onImagesSelected: (List<Uri>) -> Unit,
     navController: NavController,
-    goalHours: Int,      // <-- 추가
-    goalMinutes: Int
 ) {
     var title by remember { mutableStateOf("") }
+    var selectedImages by remember { mutableStateOf<List<Uri>>(emptyList()) }
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
+
+    val launcher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetMultipleContents()
+    ) { uris ->
+        selectedImages = uris
+    }
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("이미지 등록") },
+                navigationIcon = {
+                    IconButton(onClick = { navController.popBackStack() }) {
+                        Icon(
+                            imageVector = Icons.Default.ArrowBack,
+                            contentDescription = "뒤로가기"
+                        )
+                    }
+                }
+            )
+        },
+        bottomBar = {
+            Button(
+                onClick = {
+                    if (selectedImages.isNotEmpty()) {
+                        coroutineScope.launch {
+                            val texts = mutableListOf<String>()
+                            for (uri in selectedImages) {
+                                val bitmap = uriToBitmap(context, uri)
+                                if (bitmap != null) {
+                                    try {
+                                        val text = recognizeTextFromBitmap(bitmap)
+                                        texts.add(text)
+                                    } catch (e: Exception) {
+                                        Log.e("OCR", "Text recognition failed", e)
+                                    }
+                                }
+                            }
+                            val joinedText = texts.joinToString("\n")
+                            val encodedText = Uri.encode(joinedText)
+                            val encodedTitle = Uri.encode(title)
+                            val userPrefs = UserPreferencesDataStore(context)
+                            val userId = userPrefs.getUserId().firstOrNull()
+
+                            navController.navigate("ocr_result/$userId/$encodedTitle/$encodedText")
+                        }
+                    }
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                shape = RoundedCornerShape(12.dp),
+                enabled = selectedImages.isNotEmpty()
+            ) {
+                Text("다음")
+            }
+        }
+    ) { innerPadding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+                .padding(16.dp)
+        ) {
+            OutlinedTextField(
+                value = title,
+                onValueChange = { title = it },
+                label = { Text("제목을 입력하세요") },
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Text("이미지를 선택하세요", style = MaterialTheme.typography.titleMedium)
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Button(
+                onClick = { launcher.launch("image/*") },
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_uploadimage),
+                    contentDescription = "이미지 선택",
+                    modifier = Modifier.size(24.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("이미지 선택하기")
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            if (selectedImages.isNotEmpty()) {
+                Text("선택된 이미지 수: ${selectedImages.size}", color = Color.Gray)
+            }
+        }
+    }
+}
+
+
+/*
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ImageUploadScreen(
+    onImagesSelected: (List<Uri>) -> Unit,
+    navController: NavController,
+) {
+    var title by remember { mutableStateOf("") }
+    var selectedImages by remember { mutableStateOf<List<Uri>>(emptyList()) }
+    val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
+
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetMultipleContents()
     ) { uris ->
@@ -140,3 +253,6 @@ fun ImageUploadScreen(
         }
     }
 }
+
+ */
+*/

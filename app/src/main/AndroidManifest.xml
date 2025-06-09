@@ -5,6 +5,9 @@
     <!-- 인터넷 권한 추가 -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+
     <!-- <uses-permission android:name="android.permission.READ_MEDIA_IMAGES"/>-->
 
 
@@ -23,7 +26,8 @@
             android:name=".MainActivity"
             android:exported="true"
             android:label="@string/app_name"
-            android:theme="@style/Theme.LearningEnglish">
+            android:theme="@style/Theme.LearningEnglish"
+            android:usesCleartextTraffic="true">  <!-- 추가 -->
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 

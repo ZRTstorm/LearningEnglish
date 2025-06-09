@@ -13,6 +13,9 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.learningenglish.data.repository.LearningRepository
+import com.example.learningenglish.data.repository.WordRepository
+import com.example.learningenglish.ui.auth.AttendancePreferencesDataStore
 import com.example.learningenglish.ui.auth.AuthManager
 import com.example.learningenglish.ui.auth.UserPreferencesDataStore
 import com.example.learningenglish.ui.home.HomeScreen
@@ -21,6 +24,7 @@ import com.example.learningenglish.ui.recommendation.LibraryScreen
 import com.example.learningenglish.viewmodel.AuthViewModel
 import com.example.learningenglish.viewmodel.AuthViewModelFactory
 import com.example.learningenglish.viewmodel.LearningViewModel
+import com.example.learningenglish.viewmodel.LearningViewModelFactory
 
 
 @Composable
@@ -32,6 +36,21 @@ fun BottomBarScreen(navController: NavHostController) {
         BottomNavItem.Home,
         BottomNavItem.Library,
         BottomNavItem.MyPage
+    )
+
+    val context = LocalContext.current
+    val userPrefs = remember {UserPreferencesDataStore(context)}
+    val attendancePrefs = remember { AttendancePreferencesDataStore(context) }
+
+    val repository = LearningRepository()
+    val repositoryW = WordRepository(context, userPrefs)
+
+    val viewModel: LearningViewModel = viewModel(
+        factory = LearningViewModelFactory(
+            LearningRepository(),
+            WordRepository(context, userPrefs), // 필요한 context와 prefs 포함
+            attendancePrefs
+        )
     )
 
     Scaffold(
@@ -51,11 +70,12 @@ fun BottomBarScreen(navController: NavHostController) {
                     val context = LocalContext.current
                     val authManager = remember { AuthManager(context) }
                     val userPrefs = remember { UserPreferencesDataStore(context) }
-                    val viewModel: AuthViewModel = viewModel(factory = AuthViewModelFactory(authManager, userPrefs))
+                    val AuthviewModel: AuthViewModel = viewModel(factory = AuthViewModelFactory(authManager, userPrefs))
 
                     HomeScreen(
                         navController = navController,
-                        viewModel = viewModel
+                        viewModel = AuthviewModel,
+                        learningViewModel = viewModel
                     )
                 }
                 composable("library") {

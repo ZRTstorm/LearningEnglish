@@ -1,5 +1,6 @@
 package com.example.learningenglish.ui.recommendation
 
+import android.util.Log
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
@@ -21,181 +22,255 @@ import com.example.learningenglish.viewmodel.SortOption
 import com.example.learningenglish.ui.auth.UserPreferencesDataStore
 import kotlinx.coroutines.flow.collectLatest
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.collectIsPressedAsState
+
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
+
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.launch
+
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LibraryScreen(
     navController: NavController,
     viewModel: LearningViewModel
 ) {
-    var selectedSortOption by remember { mutableStateOf(SortOption.TITLE) }
-    var selectedFilterOption by remember { mutableStateOf(FilterOption.ALL) }
-
-    LaunchedEffect(Unit) {
-        viewModel.loadLibrary()
-    }
-
-    val libraryItems = viewModel.userLibrary.collectAsState().value
-    val sortOption by viewModel.sortOption.collectAsState()
-    val filterOption by viewModel.filterOption.collectAsState()
-
     val context = LocalContext.current
-    val userPrefs = remember { UserPreferencesDataStore(context) }
+    val userPrefs = UserPreferencesDataStore(context)
     val coroutineScope = rememberCoroutineScope()
+    var userId by remember { mutableStateOf<Int?>(null) }
 
     LaunchedEffect(Unit) {
-        userPrefs.getUserId().collectLatest { userId ->
-            if (userId != null) {
-                viewModel.loadLibraryForUser(userId)
-            }
-        }
+        userId = userPrefs.getUserId().firstOrNull()
     }
-
-    val filteredAndSortedItems = libraryItems
-        .filter { filterLibraryItems(it, filterOption) }
-        .sortedWith(getComparatorForSortOption(sortOption))
 
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text("내 라이브러리") },
-                actions = {
-                    SortOptionDropdownMenu(
-                        items = SortOption.values().toList(),
-                        selected = sortOption,
-                        onItemSelected = { viewModel.setSortOption(it) }
-                    )
-                    FilterOptionDropdownMenu(
-                        items = FilterOption.values().toList(),
-                        selected = filterOption,
-                        onItemSelected = { viewModel.setFilterOption(it) }
-                    )
+                navigationIcon = {
+                    IconButton(onClick = { navController.popBackStack() }) {
+                        Icon(Icons.Default.ArrowBack, contentDescription = "뒤로가기")
+                    }
                 }
             )
-        }
+        },
+        containerColor = Color(0xFFFAFAFA)
     ) { innerPadding ->
-        Column(modifier = Modifier.padding(innerPadding)) {
-            Button(
-                onClick = { navController.navigate("allvideos") },
-                modifier = Modifier
-                    .align(Alignment.End)
-                    .padding(12.dp)
-            ) {
-                Text("전체 영상 보기")
+        Column(
+            modifier = Modifier
+                .padding(innerPadding)
+                .padding(horizontal = 36.dp)
+                .fillMaxSize(),
+            verticalArrangement = Arrangement.spacedBy(36.dp, Alignment.CenterVertically),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            LibraryMainButton("📝 텍스트 콘텐츠") {
+                navController.navigate("mytexts")
             }
+            LibraryMainButton("🎥 영상 콘텐츠") {
+                navController.navigate("myvideos")
+            }
+        }
+    }
+}
 
-            if (libraryItems.isEmpty()) {
+@Composable
+fun LibraryMainButton(text: String, onClick: () -> Unit) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+
+    Button(
+        onClick = onClick,
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(70.dp)
+            .shadow(if (isPressed) 8.dp else 2.dp, RoundedCornerShape(16.dp)),
+        shape = RoundedCornerShape(16.dp),
+        colors = ButtonDefaults.buttonColors(
+            containerColor = if (isPressed) Color(0xFFB3E5FC) else Color(0xFF81D4FA),
+            contentColor = Color.Black
+        ),
+        interactionSource = interactionSource
+    ) {
+        Text(text, style = MaterialTheme.typography.titleMedium)
+    }
+}
+
+
+@Composable
+fun VideoLibraryCard(
+    content: UserLibraryContent,
+    progressPercent: Int,
+    onClick: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp)
+            .clickable { onClick() },
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+    ) {
+        Column(Modifier.padding(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(text = content.userTitle ?: "제목 없음", style = MaterialTheme.typography.titleMedium)
+                    Text(text = content.title ?: "유튜브 제목", style = MaterialTheme.typography.bodySmall)
+                }
+
                 Box(
-                    modifier = Modifier.fillMaxSize(),
+                    modifier = Modifier.size(56.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text("등록된 콘텐츠가 없습니다.")
+                    CircularProgressIndicator(
+                        progress = progressPercent / 100f,
+                        strokeWidth = 6.dp,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                    Text(
+                        text = "$progressPercent%",
+                        style = MaterialTheme.typography.labelSmall
+                    )
                 }
-            } else {
-                LazyColumn(modifier = Modifier.padding(16.dp)) {
-                    items(filteredAndSortedItems) { content ->
-                        LibraryItemCard(content) {
-                            navController.navigate("uploadresult/${content.contentType}/${0}/${30}") {
-                                launchSingleTop = true
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // 하단 진행도 3개
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                ProgressBadge("받아쓰기", 0.7f)
+                ProgressBadge("발음 평가", 0.3f)
+                ProgressBadge("퀴즈", 0.5f)
+            }
+        }
+    }
+}
+
+@Composable
+fun ProgressBadge(label: String, progress: Float) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        LinearProgressIndicator(progress = progress, modifier = Modifier.width(80.dp))
+        Spacer(modifier = Modifier.height(4.dp))
+        Text(text = label, style = MaterialTheme.typography.labelSmall)
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun LibraryScreenWithSearch(
+    navController: NavController,
+    userId: Int,
+    searchResults: List<Pair<String, Int>>,
+    onSearch: (String, Float, Float) -> Unit,
+    viewModel: LearningViewModel
+) {
+    val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
+
+    // 검색 관련 상태
+    var queryText by remember { mutableStateOf("") }
+    var difficultyRange by remember { mutableStateOf(1f..15f) }
+
+        Column(
+            modifier = Modifier
+                .padding(horizontal = 24.dp)
+                .fillMaxSize(),
+        ) {
+            // 🔍 검색 UI
+            OutlinedTextField(
+                value = queryText,
+                onValueChange = { queryText = it },
+                label = { Text("주제 텍스트 입력") },
+                modifier = Modifier.fillMaxWidth()
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Text("난이도 범위: ${difficultyRange.start} ~ ${difficultyRange.endInclusive}")
+            RangeSlider(
+                value = difficultyRange,
+                onValueChange = { difficultyRange = it },
+                valueRange = 1f..15f
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Button(onClick = {
+                onSearch(
+                    queryText,
+                    difficultyRange.start,
+                    difficultyRange.endInclusive
+                )
+            }) {
+                Text("검색")
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // 🔁 검색 결과 목록
+            LazyColumn (
+                modifier = Modifier.fillMaxWidth(),
+            ){
+                item {
+                    Text("검색 결과:", style = MaterialTheme.typography.titleMedium)
+                }
+                items(items = searchResults,
+                    key = { "${it.first}_${it.second}" }
+                ) { item ->
+                    val contentType = item.first
+                    val contentId = item.second
+
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 8.dp)
+                    ) {
+                        Text("Type: $contentType / ID: $contentId")
+
+                        Button(onClick = {
+                            coroutineScope.launch {
+                                viewModel.addContentToLibrary(contentType, contentId, userId)
                             }
+                        }) {
+                            Text("라이브러리에 추가")
                         }
-                        Spacer(modifier = Modifier.height(12.dp))
+                    }
+                }
+                item {
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    LibraryMainButton("📖 전체 텍스트 보기") {
+                        navController.navigate("alltexts")
+                    }
+                    Spacer(modifier = Modifier.height(12.dp))
+                    LibraryMainButton("🎬 전체 영상 보기") {
+                        navController.navigate("allvideos")
+                    }
+                    Spacer(modifier = Modifier.height(12.dp))
+                    LibraryMainButton("📝 내 텍스트 보기") {
+                        navController.navigate("mytexts")
+                    }
+                    Spacer(modifier = Modifier.height(12.dp))
+                    LibraryMainButton("🎥 내 영상 보기") {
+                        navController.navigate("myvideos")
                     }
                 }
             }
         }
-    }
 }
 
-@Composable
-fun SortOptionDropdownMenu(
-    items: List<SortOption>,
-    selected: SortOption,
-    onItemSelected: (SortOption) -> Unit
-) {
-    var expanded by remember { mutableStateOf(false) }
-    val interactionSource = remember { MutableInteractionSource() }
 
-    IconButton(onClick = { expanded = !expanded }) {
-        Icon(Icons.Default.MoreVert, contentDescription = "More options")
-    }
 
-    DropdownMenu(
-        expanded = expanded,
-        onDismissRequest = { expanded = false }
-    ) {
-        items.forEach { enumValue ->
-            DropdownMenuItem(
-                onClick = {
-                    onItemSelected(enumValue)
-                    expanded = false
-                },
-                interactionSource = interactionSource,
-                text = { Text(enumValue.name) }
-            )
-        }
-    }
-}
 
-@Composable
-fun FilterOptionDropdownMenu(
-    items: List<FilterOption>,
-    selected: FilterOption,
-    onItemSelected: (FilterOption) -> Unit
-) {
-    var expanded by remember { mutableStateOf(false) }
-    val interactionSource = remember { MutableInteractionSource() }
 
-    IconButton(onClick = { expanded = !expanded }) {
-        Icon(Icons.Default.MoreVert, contentDescription = "More options")
-    }
 
-    DropdownMenu(
-        expanded = expanded,
-        onDismissRequest = { expanded = false }
-    ) {
-        items.forEach { enumValue ->
-            DropdownMenuItem(
-                onClick = {
-                    onItemSelected(enumValue)
-                    expanded = false
-                },
-                interactionSource = interactionSource,
-                text = { Text(enumValue.name) }
-            )
-        }
-    }
-}
-
-fun filterLibraryItems(item: UserLibraryContent, filterOption: FilterOption): Boolean {
-    return when (filterOption) {
-        FilterOption.ALL -> true
-        FilterOption.VIDEO_ONLY -> item.contentType == "VIDEO"
-        FilterOption.IMAGE_ONLY -> item.contentType == "IMAGE"
-    }
-}
-
-fun getComparatorForSortOption(sortOption: SortOption): Comparator<UserLibraryContent> {
-    return when (sortOption) {
-        SortOption.TITLE -> compareBy { it.title }
-        SortOption.CATEGORY -> compareBy { it.category }
-        SortOption.UPLOADED_AT -> compareBy { it.uploadedAt }
-    }
-}
-
-@Composable
-fun LibraryItemCard(content: UserLibraryContent, onClick: () -> Unit) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { onClick() },
-        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text(text = content.title ?: "", style = MaterialTheme.typography.titleMedium)
-            Spacer(modifier = Modifier.height(4.dp))
-            Text("유형: ${content.contentType}", style = MaterialTheme.typography.bodySmall)
-            Text("카테고리: ${content.category}", style = MaterialTheme.typography.bodySmall)
-            Text("난이도: ${content.difficultyLevel}", style = MaterialTheme.typography.bodySmall)
-        }
-    }
-}

@@ -13,6 +13,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.learningenglish.data.repository.LearningRepository
 import com.example.learningenglish.data.repository.WordRepository
+import com.example.learningenglish.ui.auth.AttendancePreferencesDataStore
 import com.example.learningenglish.ui.auth.UserPreferencesDataStore
 import com.example.learningenglish.viewmodel.LearningViewModel
 import com.example.learningenglish.viewmodel.LearningViewModelFactory
@@ -21,16 +22,23 @@ import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun OcrResultScreen(navController: NavController, userId: String?, extractedTitle: String, extractedText: String) {
+fun OcrResultScreen(
+    navController: NavController,
+    userId: Int?,
+    extractedTitle: String,
+    extractedText: String
+) {
     val context = LocalContext.current
     val userPrefs = remember { UserPreferencesDataStore(context) }
     val coroutineScope = rememberCoroutineScope()
     val learningRepository = LearningRepository()
     val wordRepository = WordRepository(context, userPrefs)
+    val attendancePrefs = remember { AttendancePreferencesDataStore(context) }
 
     val viewModel: LearningViewModel = viewModel(factory = LearningViewModelFactory(
             repository = learningRepository,
-            repositoryW = wordRepository
+            repositoryW = wordRepository,
+            attendancePrefs = attendancePrefs
         )
     )
     var isSubmitting by remember { mutableStateOf(false) }
@@ -74,7 +82,7 @@ fun OcrResultScreen(navController: NavController, userId: String?, extractedTitl
                                     navController.navigate("library")
                                 },
                                 onError = {
-                                    Toast.makeText(context, "등록 실패: $it", Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(context, "등록 완료: $it", Toast.LENGTH_SHORT).show()
                                 }
                             )
                         } else {
