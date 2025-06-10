@@ -106,7 +106,7 @@ fun SelectLearningModeVideoScreen(
 
             Button(
                 onClick = {
-                    navController.navigate("quiz/$userId/video/$contentId")
+                    navController.navigate("quiz_select/$userId/video/$contentId")
                 },
                 modifier = Modifier.fillMaxWidth()
             ) {

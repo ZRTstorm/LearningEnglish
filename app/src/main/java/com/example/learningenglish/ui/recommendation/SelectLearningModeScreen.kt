@@ -106,7 +106,7 @@ fun SelectLearningModeScreen(
 
             Button(
                 onClick = {
-                    navController.navigate("quiz/$userId/text/$contentId")
+                    navController.navigate("quiz_select/$userId/text/$contentId")
                 },
                 modifier = Modifier.fillMaxWidth()
             ) {

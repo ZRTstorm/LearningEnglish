@@ -1,6 +1,7 @@
 package com.example.learningenglish.ui.learning.pronunciation
 
 import android.net.Uri
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -133,13 +134,20 @@ fun PronunciationRecordScreen(
 
             Button(
                 onClick = {
-                    audioFile?.let {
-                        viewModel.evaluatePronunciation(
-                            safeStartResult.sentenceId,
-                            safeStartResult.contentLibraryId,
-                            it
-                        )
-                        navController.navigate("pronunciation/result/$contentType/$contentId")
+                    audioFile?.let { mp4File ->
+                        val wavFile = File(context.cacheDir, "converted_audio.wav")
+                        convertMp4ToWav(mp4File, wavFile) { success ->
+                            if (success) {
+                                viewModel.evaluatePronunciation(
+                                    safeStartResult.sentenceId,
+                                    safeStartResult.contentLibraryId,
+                                    wavFile
+                                )
+                                navController.navigate("pronunciation/result/$contentType/$contentId")
+                            } else {
+                                Toast.makeText(context, "변환 실패", Toast.LENGTH_SHORT).show()
+                            }
+                        }
                     }
                 },
                 enabled = audioFile != null
@@ -149,148 +157,26 @@ fun PronunciationRecordScreen(
         }
     }
 }
+
+
 /*
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun PronunciationStartAndEvalScreen(
-    viewModel: LearningViewModel,
-    userId: Int,
-    contentType: String,
-    contentId: Int,
-    navController: NavController
+Button(
+    onClick = {
+        audioFile?.let {
+            viewModel.evaluatePronunciation(
+                safeStartResult.sentenceId,
+                safeStartResult.contentLibraryId,
+                it
+            )
+            navController.navigate("pronunciation/result/$contentType/$contentId")
+        }
+    },
+    enabled = audioFile != null
 ) {
-    val context = LocalContext.current
-    val audioRecorder = remember { AudioRecorder() }
-    val startResult by viewModel.startResult.collectAsState()
-    val evalResult by viewModel.evalResult.collectAsState()
-
-    var isRecording by remember { mutableStateOf(false) }
-    var audioFile by remember { mutableStateOf<File?>(null) }
-    var sentenceLevel by remember { mutableStateOf(50f) }
-
-    // 파일 선택 런처
-    val launcher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent()
-    ) { uri: Uri? ->
-        uri?.let {
-            val inputStream = context.contentResolver.openInputStream(it)
-            val tempFile = File(context.cacheDir, "upload.mp3")
-            inputStream?.use { input ->
-                tempFile.outputStream().use { output ->
-                    input.copyTo(output)
-                }
-            }
-            audioFile = tempFile
-        }
-    }
-
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("🎤 발음 평가") },
-                actions = {
-                    startResult?.let {
-                        Box(
-                            modifier = Modifier
-                                .padding(end = 16.dp)
-                                .background(Color(0xFFBBDEFB), shape = CircleShape)
-                                .padding(12.dp)
-                        ) {
-                            Text("Lv.${it.level.toInt()}")
-                        }
-                    }
-                }
-            )
-        }
-    ) { padding ->
-        Column(
-            modifier = Modifier
-                .padding(padding)
-                .padding(16.dp)
-                .fillMaxSize(),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            // 문장 불러오기
-            Text("레벨 선택: ${sentenceLevel.toInt()}")
-            Slider(
-                value = sentenceLevel,
-                onValueChange = { sentenceLevel = it },
-                valueRange = 1f..100f
-            )
-            Button(onClick = {
-                viewModel.startPronunciation(
-                    userId = userId,
-                    contentType = contentType,
-                    contentId = contentId,
-                    sentenceLevel = sentenceLevel.toInt()
-                )
-            }) {
-                Text("문장 불러오기")
-            }
-
-            if (startResult == null) {
-                CircularProgressIndicator()
-                return@Column
-            }
-
-            // 문장 표시
-            Text("문장", style = MaterialTheme.typography.titleMedium)
-            Text(
-                text = startResult!!.sentence,
-                modifier = Modifier
-                    .background(Color(0xFFE1F5FE))
-                    .padding(12.dp)
-            )
-
-            // 녹음 or 파일 선택
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                Button(onClick = {
-                    if (!isRecording) {
-                        audioFile = audioRecorder.startRecording(context)
-                        isRecording = true
-                    } else {
-                        val file = audioRecorder.stopRecording()
-                        if (file != null) audioFile = file
-                        isRecording = false
-                    }
-                }) {
-                    Text(if (isRecording) "🎙️ 녹음 중지" else "🎙️ 녹음 시작")
-                }
-
-                Button(onClick = {
-                    launcher.launch("audio/*")
-                }) {
-                    Text("파일 업로드")
-                }
-            }
-
-            // 발음 평가
-            Button(
-                onClick = {
-                    audioFile?.let {
-                        viewModel.evaluatePronunciation(
-                            startResult!!.sentenceId,
-                            startResult!!.contentLibraryId,
-                            it
-                        )
-                    }
-                },
-                enabled = audioFile != null
-            ) {
-                Text("발음 평가")
-            }
-
-            // 결과 출력
-            evalResult?.let {
-                Text("정확도: ${it.accuracy}")
-                Text("유창성: ${it.fluency}")
-                Text("완성도: ${it.completeness}")
-                Text("총점: ${it.pronunciation}")
-                Spacer(modifier = Modifier.height(8.dp))
-                it.feedbackMessages.forEach { msg -> Text("- $msg") }
-            }
-        }
-    }
+    Text("발음 평가")
+}
+}
+}
 }
 
  */

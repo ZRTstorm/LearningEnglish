@@ -20,6 +20,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SmallTopAppBar
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -56,6 +58,7 @@ fun VideoLinkUploadScreen(
     val context = LocalContext.current
     val userPrefs = remember { UserPreferencesDataStore(context) }
     val coroutineScope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
 
     Scaffold(
         topBar = {
@@ -70,7 +73,8 @@ fun VideoLinkUploadScreen(
                     }
                 }
             )
-        }
+        },
+        snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
     ) { innerPadding ->
         Column(
             modifier = Modifier
@@ -108,6 +112,40 @@ fun VideoLinkUploadScreen(
                 onClick = {
                     if (url.isNotBlank() && title.isNotBlank()) {
                         Toast.makeText(context, "등록 중입니다..", Toast.LENGTH_SHORT).show()
+
+                        coroutineScope.launch {
+                            val userId = userPrefs.getUserId().firstOrNull()
+                            if (userId != null) {
+                                val audioData = AudioData(userId = userId, title = title, url = url)
+                                try {
+                                    val response = RetrofitInstance.api.uploadAudio(audioData)
+                                    if (response.isSuccessful) {
+                                        withContext(Dispatchers.Main) {
+                                            snackbarHostState.showSnackbar("🎧 \"$title\" 컨텐츠 등록 성공!")
+                                            navController.navigate("library")  // 🔄 여기에 위치 변경
+                                            Toast.makeText(context, "학습을 시작해보세요!", Toast.LENGTH_SHORT).show()
+                                        }
+                                    } else {
+                                        withContext(Dispatchers.Main) {
+                                            Toast.makeText(context, "등록 실패: ${response.message()}", Toast.LENGTH_SHORT).show()
+                                        }
+                                    }
+                                } catch (e: Exception) {
+                                    withContext(Dispatchers.Main) {
+                                        Toast.makeText(context, "등록 중 오류 발생", Toast.LENGTH_SHORT).show()
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp),
+                enabled = url.isNotBlank() && title.isNotBlank()
+            ) {
+                Text("등록")
+            }
+                        /*
                         navController.navigate("home")
 
                         coroutineScope.launch {
@@ -153,10 +191,12 @@ fun VideoLinkUploadScreen(
                 enabled = url.isNotBlank() && title.isNotBlank()
             ) {
                 Text("등록")
-            }
+            }  */
         }
     }
 }
+
+
 
 
 

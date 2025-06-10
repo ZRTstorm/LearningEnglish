@@ -94,4 +94,9 @@ dependencies {
 
     implementation ("org.burnoutcrew.composereorderable:reorderable:0.9.6")
 
+    //implementation ("com.arthenica:ffmpeg-kit-full:5.1")
+
+    //implementation ("com.arthenica:ffmpeg-kit-full:6.0.LTS")
+    implementation(files("libs/ffmpeg-kit-audio-6.0-2.aar"))
+    implementation ("com.arthenica:smart-exception-java:0.2.1")
 }

@@ -169,6 +169,12 @@ data class QuizData(
     val sentenceList: List<String>
 )
 
+data class OrderQuizData(
+    val quizId: Int,
+    val sentenceList: List<OrderSentence> // 이걸 List<String>이 아니라 OrderSentence로
+)
+
+
 //주제기반 추천컨텐츠
 data class ContentSearchResult(
     val contentType: String,

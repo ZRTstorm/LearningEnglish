@@ -22,6 +22,7 @@ import com.example.learningenglish.data.model.InsertionQuizRetryResponse
 import com.example.learningenglish.data.model.LearningResponse
 import com.example.learningenglish.data.model.OcrUploadRequest
 import com.example.learningenglish.data.model.OrderFeedbackResponse
+import com.example.learningenglish.data.model.OrderQuizData
 import com.example.learningenglish.data.model.OrderQuizRetryResponse
 import com.example.learningenglish.data.model.PronunciationEvalResponse
 import com.example.learningenglish.data.model.PronunciationHistoryItem
@@ -154,45 +155,6 @@ class LearningViewModel(
         _selectedEvalSentence.value = sentence
     }
 
-    /*
-    fun evaluatePronunciation(contentId: Int, text: String, audioFile: File) {
-        viewModelScope.launch {
-            try {
-                Log.d("PronEval", "audio file path: ${audioFile.absolutePath}")
-                Log.d("PronEval", "audio file size: ${audioFile.length()} bytes")
-
-                val audioRequest = audioFile
-                    .asRequestBody("audio/mp4".toMediaTypeOrNull())
-
-                val multipartBody = MultipartBody.Part.createFormData(
-                    name = "audio",
-                    filename = audioFile.name,
-                    body = audioRequest
-                )
-
-                val response = repository.evaluatePronunciation(
-                    contentId,
-                    text,
-                    multipartBody
-                )
-
-                Log.d("PronEval", "📡 response code: ${response.code()}")
-                Log.d("PronEval", "📡 response body: ${response.body()}")
-
-
-                if (response.isSuccessful) {
-                    val result = response.body()
-                    _evalResult.value = result
-                } else {
-                    Log.e("PronEval", "실패: ${response.code()}, ${response.errorBody()?.string()}")
-                }
-            } catch (e: Exception) {
-                Log.e("PronEval", "에러: ${e.localizedMessage}")
-            }
-        }
-    }
-
-     */
 
     private val _summaryText = MutableStateFlow<String?>(null)
     val summaryText: StateFlow<String?> = _summaryText
@@ -613,11 +575,14 @@ class LearningViewModel(
         return QuizData(quizId, response.sentenceList)
     }
 
+    /*
     fun saveQuiz(userId: Int, contentType: String, contentId: Int) {
         viewModelScope.launch {
             saveQuizResult(userId, contentType, contentId)
         }
     }
+
+     */
 
     fun setUserAnswer(index: Int, answer: Int) {
         userAnswers[index] = answer
@@ -628,13 +593,19 @@ class LearningViewModel(
         return (correct * 100) / insertNumList.size
     }
 
-    suspend fun saveQuizResult(userId: Int, contentType: String, contentId: Int, quizType: String = "insertion") {
+    suspend fun saveQuizResult(
+        userId: Int,
+        contentType: String,
+        contentId: Int,
+        quizType: String
+    ): Int {
         val libraryId = repository.getLibraryId(userId, contentType, contentId)
         val original = insertNumList.joinToString("-")
         val user = userAnswers.joinToString("-")
         val score = calculateScore()
-        repository.saveQuizResult(quizType, libraryId, original, user, score)
+        return repository.saveQuizResult(quizType, libraryId, original, user, score)
     }
+
 
     // 퀴즈 - order
     // 문장 배열 퀴즈 로드
@@ -647,12 +618,19 @@ class LearningViewModel(
     }*/
 
 
+    /*
     suspend fun loadOrderQuiz(userId: Int, contentType: String, contentId: Int): QuizData {
         val result = repository.getOrderQuiz(contentType, contentId)
         insertNumList = result.map { it.index }.toMutableList()
         sentenceList = result.map { it.text }
         val quizId = repository.getLibraryId(userId, contentType, contentId)
         return QuizData(quizId, sentenceList)
+    }*/
+
+    suspend fun loadOrderQuiz(userId: Int, contentType: String, contentId: Int): OrderQuizData {
+        val sentenceList = repository.getOrderQuiz(contentType, contentId) // List<OrderSentence>
+        val quizId = repository.getLibraryId(userId, contentType, contentId)
+        return OrderQuizData(quizId, sentenceList) // QuizData의 두 번째 파라미터를 List<OrderSentence>로
     }
 
     fun updateUserOrder(newOrder: List<Int>) {
@@ -664,12 +642,12 @@ class LearningViewModel(
         return (correct * 100) / insertNumList.size
     }
 
-    suspend fun saveOrderQuizResult(userId: Int, contentType: String, contentId: Int) {
+    suspend fun saveOrderQuizResult(userId: Int, contentType: String, contentId: Int): Int {
         val libraryId = repository.getLibraryId(userId, contentType, contentId)
         val original = insertNumList.joinToString("-")
         val user = userAnswers.joinToString("-")
         val score = calculateOrderScore()
-        repository.saveQuizResult("summaOrders", libraryId, original, user, score)
+        return repository.saveQuizResult("summaOrders", libraryId, original, user, score)
     }
 
     //퀴즈 피드백

@@ -125,7 +125,17 @@ class LearningRepository {
         originalData: String,
         userData: String,
         score: Int
-    ) = api.saveQuizResult(quizType, libraryId, originalData, userData, score)
+    ): Int {
+        val response = api.saveQuizResult(quizType, libraryId, originalData, userData, score)
+        if (response.isSuccessful) {
+            val body = response.body()?.string()?.trim()
+            return body?.toIntOrNull()
+                ?: throw IllegalStateException("응답 본문이 비어 있거나 정수가 아님: $body")
+        } else {
+            throw IllegalStateException("퀴즈 저장 실패: ${response.code()}")
+        }
+    }
+
 
     //퀴즈 order
     suspend fun getOrderQuiz(contentType: String, contentId: Int): List<OrderSentence> {

@@ -160,7 +160,7 @@ interface ApiService {
         @Query("originalData") originalData: String,
         @Query("userData") userData: String,
         @Query("score") score: Int
-    ): Response<Unit>
+    ): Response<ResponseBody>
 
     //퀴즈 배열
     @GET("quiz/orders/{contentType}/{contentId}")

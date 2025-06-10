@@ -1,146 +1,138 @@
 package com.example.learningenglish.ui.quiz
 
+import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.example.learningenglish.ui.auth.UserPreferencesDataStore
 import com.example.learningenglish.viewmodel.LearningViewModel
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
-import org.burnoutcrew.reorderable.ReorderableItem
-import org.burnoutcrew.reorderable.detectReorderAfterLongPress
-import org.burnoutcrew.reorderable.rememberReorderableLazyListState
-import org.burnoutcrew.reorderable.reorderable
 
-/*
+
+// 배열 퀴즈 화면
 @Composable
 fun OrderQuizScreen(
     navController: NavController,
+    userId: Int,
     contentType: String,
     contentId: Int,
     viewModel: LearningViewModel
 ) {
     val context = LocalContext.current
-    val coroutineScope = rememberCoroutineScope()
-    var currentOrder by remember { mutableStateOf(listOf<Int>()) }
+    val scope = rememberCoroutineScope()
 
-    LaunchedEffect(Unit) {
-        viewModel.loadOrderQuiz(contentType, contentId)
-        currentOrder = viewModel.userAnswers
+    var originalOrder by remember { mutableStateOf(listOf<Pair<Int, String>>()) }
+    var shuffledOrder by remember { mutableStateOf(listOf<Pair<Int, String>>()) }
+    var selectedOrder by remember { mutableStateOf(listOf<Pair<Int, String>>()) }
+    var isQuizLoaded by remember { mutableStateOf(false) }
+
+    val isOrderCompleted by remember(selectedOrder, originalOrder) {
+        derivedStateOf { selectedOrder.size == originalOrder.size }
     }
 
-    Column(modifier = Modifier.padding(16.dp)) {
-        Text("문장 순서 배열 퀴즈", style = MaterialTheme.typography.headlineSmall)
-        Spacer(modifier = Modifier.height(16.dp))
-
-        LazyColumn {
-            items(currentOrder.size) { i ->
-                val idx = currentOrder[i]
-                val text = viewModel.sentenceList[viewModel.insertNumList.indexOf(idx)]
-                Text(
-                    text = "${i + 1}. $text",
-                    modifier = Modifier
-                        .padding(8.dp)
-                        .border(1.dp, Color.Gray)
-                        .fillMaxWidth()
-                        .padding(12.dp)
-                )
-            }
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Button(onClick = {
-            val score = viewModel.calculateOrderScore()
-            Toast.makeText(context, "점수: $score 점", Toast.LENGTH_SHORT).show()
-
-            coroutineScope.launch {
-                viewModel.saveOrderQuizResult(contentType, contentId)
-            }
-        }) {
-            Text("제출")
+    LaunchedEffect(true) {
+        try {
+            val quizData = viewModel.loadOrderQuiz(userId, contentType, contentId)
+            originalOrder = quizData.sentenceList.map { it.index to it.text }
+            shuffledOrder = originalOrder.shuffled()
+            isQuizLoaded = true
+        } catch (e: Exception) {
+            Toast.makeText(context, "퀴즈 로딩 실패", Toast.LENGTH_SHORT).show()
         }
     }
-}
 
-@Composable
-fun OrderQuizDragScreen(
-    navController: NavController,
-    contentType: String,
-    contentId: Int,
-    viewModel: LearningViewModel
-) {
-    val context = LocalContext.current
-    val coroutineScope = rememberCoroutineScope()
-    var orderList by remember { mutableStateOf(listOf<Pair<Int, String>>()) }
-    val reorderState = rememberReorderableLazyListState(onMove = { from, to ->
-        orderList = orderList.toMutableList().apply { add(to.index, removeAt(from.index)) }
-    })
+    Scaffold(
+        bottomBar = {
+            Button(
+                onClick = {
+                    scope.launch {
+                        viewModel.userAnswers = selectedOrder.map { it.first }.toMutableList()
+                        viewModel.insertNumList = originalOrder.map { it.first }.toMutableList()
+                        val quizId = viewModel.saveOrderQuizResult(userId, contentType, contentId)
+                        navController.navigate("order_result/$userId/$contentType/$contentId/$quizId")
+                    }
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(12.dp),
+                enabled = isOrderCompleted
+            ) {
+                Text("제출")
+            }
+        }
+    ) { padding ->
+        if (!isQuizLoaded) {
+            Box(
+                modifier = Modifier
+                    .padding(padding)
+                    .fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator()
+            }
+            return@Scaffold
+        }
 
-    LaunchedEffect(Unit) {
-        viewModel.loadOrderQuiz(contentType, contentId)
-        orderList = viewModel.insertNumList.mapIndexed { i, idx -> idx to viewModel.sentenceList[i] }.shuffled()
-    }
+        Column(modifier = Modifier
+            .padding(padding)
+            .padding(16.dp)) {
 
-    Column(modifier = Modifier.padding(16.dp)) {
-        Text("문장 순서 배열 퀴즈", style = MaterialTheme.typography.headlineSmall)
-        Spacer(modifier = Modifier.height(16.dp))
+            Text("문제 유형: 순서 배열", style = MaterialTheme.typography.headlineSmall)
+            Spacer(Modifier.height(16.dp))
 
-        LazyColumn(
-            state = reorderState.listState,
-            modifier = Modifier
-                .fillMaxWidth()
-                .reorderable(reorderState)
-                .detectReorderAfterLongPress(reorderState)
-        ) {
-            items(orderList, key = { it.first }) { (idx, sentence) ->
-                ReorderableItem(reorderState, key = idx) {
-                    Text(
-                        text = sentence,
+            LazyColumn(modifier = Modifier.weight(1f)) {
+                items(shuffledOrder) { pair ->
+                    Button(
+                        onClick = {
+                            if (!selectedOrder.contains(pair)) selectedOrder = selectedOrder + pair
+                        },
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(8.dp)
-                            .border(1.dp, Color.Gray)
-                            .padding(12.dp)
-                    )
+                            .padding(4.dp)
+                    ) {
+                        Text(pair.second)
+                    }
+                }
+                item {
+                    Spacer(Modifier.height(8.dp))
+                    Text("선택한 순서")
+                    selectedOrder.forEachIndexed { i, pair ->
+                        Text("${i + 1}. ${pair.second}", modifier = Modifier.padding(4.dp))
+                    }
                 }
             }
         }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Button(onClick = {
-            val answerOrder = orderList.map { it.first }
-            viewModel.userAnswers = answerOrder.toMutableList()
-            val score = viewModel.calculateOrderScore()
-            Toast.makeText(context, "점수: $score 점", Toast.LENGTH_SHORT).show()
-            coroutineScope.launch {
-                viewModel.saveOrderQuizResult(contentType, contentId)
-            }
-        }) {
-            Text("제출")
-        }
     }
 }
-
- */
 

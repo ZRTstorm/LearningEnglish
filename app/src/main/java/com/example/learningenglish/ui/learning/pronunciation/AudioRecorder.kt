@@ -5,6 +5,8 @@ import android.media.MediaRecorder
 import android.os.Environment
 import android.util.Log
 import java.io.File
+import com.arthenica.ffmpegkit.FFmpegKit
+
 
 class AudioRecorder {
 
@@ -39,5 +41,13 @@ class AudioRecorder {
             Log.e("AudioRecorder", "녹음 중지 실패: ${e.message}")
             null
         }
+    }
+}
+
+fun convertMp4ToWav(inputFile: File, outputFile: File, onFinish: (Boolean) -> Unit) {
+    val command = "-i ${inputFile.absolutePath} -ar 44100 -ac 1 -c:a pcm_s16le ${outputFile.absolutePath}"
+    FFmpegKit.executeAsync(command) { session ->
+        val returnCode = session.returnCode
+        onFinish(returnCode.isValueSuccess)
     }
 }

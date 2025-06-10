@@ -51,7 +51,6 @@ import com.example.learningenglish.ui.learning.DataLearning.upload.VideoLinkUplo
 import com.example.learningenglish.ui.learning.LearningStartScreen
 import com.example.learningenglish.ui.mypage.EditProfileScreen
 import com.example.learningenglish.ui.mypage.MyPageScreen
-import com.example.learningenglish.ui.learning.pronunciation.PronunciationTestScreen
 import com.example.learningenglish.ui.recommendation.RecommendationScreen
 import com.example.learningenglish.ui.learning.summary.SummaryTestScreen
 import com.example.learningenglish.ui.theme.LearningEnglishTheme
@@ -76,10 +75,13 @@ import com.example.learningenglish.ui.learning.dictation.DictationSentenceTypeSe
 import com.example.learningenglish.ui.learning.pronunciation.PronunciationRecordScreen
 import com.example.learningenglish.ui.learning.pronunciation.PronunciationResultScreen
 import com.example.learningenglish.ui.learning.pronunciation.PronunciationSentenceSelectScreen
+import com.example.learningenglish.ui.quiz.InsertionQuizScreen
+import com.example.learningenglish.ui.quiz.InsertionResultScreen
+import com.example.learningenglish.ui.quiz.OrderQuizResultScreen
+import com.example.learningenglish.ui.quiz.OrderQuizScreen
+import com.example.learningenglish.ui.quiz.QuizTypeSelectScreen
 //import com.example.learningenglish.ui.learning.pronunciation.PronunciationStartAndEvalScreen
-import com.example.learningenglish.ui.learning.pronunciation.PronunciationTypeSelectionScreen
-import com.example.learningenglish.ui.learning.pronunciation.SummaryPronunciationScreen
-import com.example.learningenglish.ui.quiz.MixedQuizScreen
+//import com.example.learningenglish.ui.quiz.MixedQuizScreen
 import com.example.learningenglish.ui.recommendation.AllTextLibraryScreen
 import com.example.learningenglish.ui.recommendation.AllVideoLibraryScreen
 import com.example.learningenglish.ui.recommendation.LibraryScreen
@@ -518,36 +520,7 @@ class MainActivity : ComponentActivity() {
                         )
                     }*/
 
-                    composable("pronunciation_select/{contentsType}/{contentId}",
-                        arguments = listOf(
-                            navArgument("contentsType") { type = NavType.StringType },
-                            navArgument("contentId") { type = NavType.IntType }
-                        )
-                    ) { backStackEntry ->
-                        val contentId = backStackEntry.arguments?.getInt("contentId") ?: return@composable
-                        val contentsType = backStackEntry.arguments?.getString("contentsType") ?: return@composable
 
-                        PronunciationTypeSelectionScreen(
-                            viewModel = viewModel,
-                            contentId = contentId,
-                            contentsType = contentsType,
-                            navController = navController
-                        )
-                    }
-
-                    composable("pronunciation_summary/{contentsType}/{contentId}",
-                        arguments = listOf(navArgument("contentId") { type = NavType.IntType })
-                    ) { backStackEntry ->
-                        val contentId = backStackEntry.arguments?.getInt("contentId") ?: 0
-                        val contentsType = backStackEntry.arguments?.getString("contentsType") ?: return@composable
-
-                        SummaryPronunciationScreen(
-                            viewModel = viewModel,
-                            contentId = contentId,
-                            contentsType = contentsType,
-                            navController = navController
-                        )
-                    }
 
                     /*
                     composable("pronunciation_eval/{userId}/{contentType}/{contentId}") { backStackEntry ->
@@ -617,6 +590,7 @@ class MainActivity : ComponentActivity() {
                     }
 
 
+                    /*
                     composable("quiz/{userId}/{contentsType}/{contentId}") {backStackEntry ->
                         val userId = backStackEntry.arguments?.getString("userId")?.toIntOrNull() ?: return@composable
                         val contentsType = backStackEntry.arguments?.getString("contentsType") ?: "text"
@@ -625,6 +599,96 @@ class MainActivity : ComponentActivity() {
                         //val id = it.arguments?.getString("id")!!.toInt()
                         MixedQuizScreen(navController, userId, contentsType, contentId, viewModel)
                     }
+                     */
+
+                    composable("quiz_select/{userId}/{contentType}/{contentId}") { backStackEntry ->
+                        val userId = backStackEntry.arguments?.getString("userId")?.toIntOrNull() ?: return@composable
+                        val contentType = backStackEntry.arguments?.getString("contentType") ?: return@composable
+                        val contentId = backStackEntry.arguments?.getString("contentId")?.toIntOrNull() ?: return@composable
+
+                        QuizTypeSelectScreen(
+                            navController = navController,
+                            userId = userId,
+                            contentType = contentType,
+                            contentId = contentId
+                        )
+                    }
+                    // 삽입 퀴즈 화면
+                    composable("insertion_quiz/{userId}/{contentType}/{contentId}") { backStackEntry ->
+                        val userId = backStackEntry.arguments?.getString("userId")?.toIntOrNull() ?: return@composable
+                        val contentType = backStackEntry.arguments?.getString("contentType") ?: return@composable
+                        val contentId = backStackEntry.arguments?.getString("contentId")?.toIntOrNull() ?: return@composable
+
+                        InsertionQuizScreen(
+                            navController = navController,
+                            userId = userId,
+                            contentType = contentType,
+                            contentId = contentId,
+                            viewModel = viewModel
+                        )
+                    }
+                    composable(
+                        "insertion_result/{userId}/{contentType}/{contentId}/{quizId}",
+                        arguments = listOf(
+                            navArgument("userId") { type = NavType.IntType },
+                            navArgument("contentType") { type = NavType.StringType },
+                            navArgument("contentId") { type = NavType.IntType },
+                            navArgument("quizId") { type = NavType.IntType }
+                        )
+                    ) { backStackEntry ->
+                        val userId = backStackEntry.arguments!!.getInt("userId")
+                        val contentType = backStackEntry.arguments!!.getString("contentType")!!
+                        val contentId = backStackEntry.arguments!!.getInt("contentId")
+                        val quizId = backStackEntry.arguments!!.getInt("quizId")
+
+                        InsertionResultScreen(
+                            navController = navController,
+                            userId = userId,
+                            contentType = contentType,
+                            contentId = contentId,
+                            quizId = quizId,
+                            viewModel = viewModel // 동일한 ViewModel 전달
+                        )
+                    }
+
+                    // 배열 퀴즈 화면
+                    composable("order_quiz/{userId}/{contentType}/{contentId}") { backStackEntry ->
+                        val userId = backStackEntry.arguments?.getString("userId")?.toIntOrNull() ?: return@composable
+                        val contentType = backStackEntry.arguments?.getString("contentType") ?: return@composable
+                        val contentId = backStackEntry.arguments?.getString("contentId")?.toIntOrNull() ?: return@composable
+
+                        OrderQuizScreen(
+                            navController = navController,
+                            userId = userId,
+                            contentType = contentType,
+                            contentId = contentId,
+                            viewModel = viewModel
+                        )
+                    }
+                    composable(
+                        "order_result/{userId}/{contentType}/{contentId}/{quizId}",
+                        arguments = listOf(
+                            navArgument("userId") { type = NavType.IntType },
+                            navArgument("contentType") { type = NavType.StringType },
+                            navArgument("contentId") { type = NavType.IntType },
+                            navArgument("quizId") { type = NavType.IntType }
+                        )
+                    ) { backStackEntry ->
+                        val userId = backStackEntry.arguments!!.getInt("userId")
+                        val contentType = backStackEntry.arguments!!.getString("contentType")!!
+                        val contentId = backStackEntry.arguments!!.getInt("contentId")
+                        val quizId = backStackEntry.arguments!!.getInt("quizId")
+
+                        OrderQuizResultScreen(
+                            navController = navController,
+                            userId = userId,
+                            contentType = contentType,
+                            contentId = contentId,
+                            quizId = quizId,
+                            viewModel = viewModel // 동일한 ViewModel 전달
+                        )
+                    }
+
 
                     // NavGraph route 선언 예시
                     composable(
