@@ -47,7 +47,7 @@ fun QuizTypeSelectScreen(
 
             Button(
                 onClick = {
-                    navController.navigate("order_quiz/$userId/$contentType/$contentId")
+                    navController.navigate("summaOrders_quiz/$userId/$contentType/$contentId")
                 },
                 modifier = Modifier.fillMaxWidth().padding(8.dp)
             ) {

@@ -169,15 +169,6 @@ fun PronunciationRecordScreen(
                 return@Column
             }
             val safeStartResult = startResult ?: return@Column
-            /*
-            val safeStartResult = startResult
-
-            if (safeStartResult == null) {
-                CircularProgressIndicator()
-                return@Column
-            }
-
-             */
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -219,61 +210,47 @@ fun PronunciationRecordScreen(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Box(
-                        modifier = Modifier
-                            .background(Color.LightGray, RoundedCornerShape(6.dp))
-                            .padding(4.dp)
-                            .clickable { showUploadHelp = !showUploadHelp }
-                    ) {
-                        Text("!", fontSize = 12.sp)
-                    }
-                    if (showUploadHelp) {
-                        Text(
-                            text = "평가에 사용할 음성 파일을 업로드하세요",
-                            fontSize = 10.sp
-                        )
-                    }
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Button(
-                        onClick = { launcher.launch("audio/*") },
-                        modifier = Modifier.fillMaxWidth(0.9f),
-                        colors = ButtonDefaults.buttonColors(containerColor = Color.Black)
-                    ) {
-                        Text("파일 업로드", color = Color.White)
-                    }
-                }
+                Text("!", modifier = Modifier.clickable { showUploadHelp = !showUploadHelp }, fontSize = 12.sp)
+                Spacer(Modifier.width(80.dp))
+                Text("!", modifier = Modifier.clickable { showRecordHelp = !showRecordHelp }, fontSize = 12.sp)
+            }
 
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Box(
-                        modifier = Modifier
-                            .background(Color.LightGray, RoundedCornerShape(6.dp))
-                            .padding(4.dp)
-                            .clickable { showRecordHelp = !showRecordHelp }
-                    ) {
-                        Text("!", fontSize = 12.sp)
-                    }
-                    if (showRecordHelp) {
-                        Text(
-                            text = "평가에 사용할 음성을 직접 녹음하세요",
-                            fontSize = 10.sp
-                        )
-                    }
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Button(
-                        onClick = {
-                            showRecorder = true
-                            isRecording = true
-                            elapsedTimeMs = 0L
-                            amplitudeList.clear()
-                            audioFile = audioRecorder.startRecording(context)
-                        },
-                        modifier = Modifier.fillMaxWidth(0.9f),
-                        colors = ButtonDefaults.buttonColors(containerColor = Color.Black)
-                    ) {
-                        Text("녹음", color = Color.White)
-                    }
+            if (showUploadHelp || showRecordHelp) {
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
+                    Text(
+                        text = if (showUploadHelp) "평가에 사용할 음성 파일을 업로드하세요" else "",
+                        fontSize = 10.sp
+                    )
+                    Text(
+                        text = if (showRecordHelp) "평가에 사용할 음성을 직접 녹음하세요" else "",
+                        fontSize = 10.sp
+                    )
                 }
+            }
+
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly
+            ) {
+                Button(
+                    onClick = { launcher.launch("audio/*") },
+                    modifier = Modifier.weight(1f),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.Black)
+                ) { Text("파일 업로드", color = Color.White) }
+
+                Spacer(modifier = Modifier.width(8.dp))
+
+                Button(
+                    onClick = {
+                        showRecorder = true
+                        isRecording = true
+                        elapsedTimeMs = 0L
+                        amplitudeList.clear()
+                        audioFile = audioRecorder.startRecording(context)
+                    },
+                    modifier = Modifier.weight(1f),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.Black)
+                ) { Text("녹음", color = Color.White) }
             }
 
             if (showRecorder) {

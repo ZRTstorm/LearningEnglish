@@ -56,6 +56,7 @@ fun VideoDetailScreen(
     var selectedWord by remember { mutableStateOf("") }
     val wordInfo by viewModel.selectedWordInfo.collectAsState()
     var showWordDialog by remember { mutableStateOf(false) }
+    var savedWords = remember { mutableStateListOf<String>() }
 
     var showExitDialog by remember { mutableStateOf(false) }
 
@@ -179,14 +180,17 @@ fun VideoDetailScreen(
                             ) {
                                 when (subtitleMode) {
                                     "EN_ONLY" -> {
-                                        ClickableWordText(sentence = segment.originalText) { word ->
+                                        ClickableWordText(
+                                            sentence = segment.originalText,
+                                            savedWords = savedWords
+                                        ) { word ->
                                             selectedWord = word
                                             viewModel.loadWordDetail(word)
                                             showWordDialog = true
                                         }
                                     }
                                     "BOTH" -> {
-                                        ClickableWordText(sentence = segment.originalText) { word ->
+                                        ClickableWordText(sentence = segment.originalText, savedWords = savedWords) { word ->
                                             selectedWord = word
                                             viewModel.loadWordDetail(word)
                                             showWordDialog = true
@@ -233,30 +237,22 @@ fun VideoDetailScreen(
         AlertDialog(
             onDismissRequest = { showExitDialog = false },
             title = { Text("학습을 종료하시겠습니까?") },
-            text = { Text("학습을 종료하고 유사한 콘텐츠를 추천받거나 홈 화면으로 돌아갈 수 있습니다.") },
+            text = { Text("학습을 종료하고 홈 화면으로 돌아갈 수 있습니다.") },
             confirmButton = {
                 TextButton(onClick = {
                     showExitDialog = false
-
-                    navController.navigate("similar_content/$contentsType/$contentId")
+                    navController.navigate("home")
                 }) {
-                    Text("유사한 콘텐츠 학습하기")
+                    Text("홈으로")
                 }
             },
             dismissButton = {
-                Row {
-                    TextButton(onClick = {
-                        showExitDialog = false
-                        navController.navigate("home")
-                    }) {
-                        Text("홈으로")
-                    }
-                    TextButton(onClick = {
-                        showExitDialog = false
-                    }) {
-                        Text("취소")
-                    }
+                TextButton(onClick = {
+                    showExitDialog = false
+                }) {
+                    Text("취소")
                 }
+
             }
         )
     }
@@ -267,7 +263,13 @@ fun VideoDetailScreen(
             onClose = { showWordDialog = false },
             onFavorite = {
                 //val uid = Firebase.auth.currentUser?.uid ?: return@WordDetailDialog  // 👉 이건 위에서 받아오도록 처리 필요 (아래 설명 참고)
-                viewModel.addWordToUserVocab(selectedWord, userId)
+                if (!savedWords.contains(selectedWord)) {
+                    viewModel.addWordToUserVocab(selectedWord, userId)
+                    savedWords.add(selectedWord)
+                    Toast.makeText(context, "\"$selectedWord\" 등록 완료!", Toast.LENGTH_SHORT).show()
+                } else {
+                    Toast.makeText(context, "이미 등록된 단어입니다.", Toast.LENGTH_SHORT).show()
+                }
             },
             wordInfo = viewModel.selectedWordInfo.collectAsState().value
         )
@@ -343,6 +345,7 @@ fun YouTubePlayerComponent(
 @Composable
 fun ClickableWordText(
     sentence: String,
+    savedWords: List<String> = emptyList(),
     onWordClick: (String) -> Unit
 ) {
     val words = sentence.split(Regex("\\s+"))
@@ -351,6 +354,7 @@ fun ClickableWordText(
             val cleanWord = word.trim().filter { it.isLetterOrDigit() }
             Text(
                 text = "$word ",
+                color = if (savedWords.contains(cleanWord)) Color(0xFFFFC107) else Color.Unspecified,
                 modifier = Modifier
                     .clickable { onWordClick(cleanWord) }
                     .padding(horizontal = 2.dp),

@@ -83,7 +83,7 @@ fun OrderQuizScreen(
                         viewModel.userAnswers = selectedOrder.map { it.first }.toMutableList()
                         viewModel.insertNumList = originalOrder.map { it.first }.toMutableList()
                         val quizId = viewModel.saveOrderQuizResult(userId, contentType, contentId)
-                        navController.navigate("order_result/$userId/$contentType/$contentId/$quizId")
+                        navController.navigate("summaOrders_result/$userId/$contentType/$contentId/$quizId")
                     }
                 },
                 modifier = Modifier

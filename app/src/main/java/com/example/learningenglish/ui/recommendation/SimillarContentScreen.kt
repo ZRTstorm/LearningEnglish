@@ -19,6 +19,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RangeSlider
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -57,6 +58,7 @@ fun SimilarContentScreen(
     var difficultyRange by remember { mutableStateOf(1f..15f) }
     val searchResults by viewModel.similarContents.collectAsState()
     //var searchResults by remember { mutableStateOf(emptyList<Pair<String, Int>>()) }
+    val snackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(Unit) {
         userId = userPrefs.getUserId().firstOrNull() ?: 0
@@ -108,7 +110,9 @@ fun SimilarContentScreen(
                         contentType = contentType,
                         contentId = contentId,
                         userId = userId,
-                        viewModel = viewModel
+                        viewModel = viewModel,
+                        navController = navController,
+                        snackbarHostState = snackbarHostState
                     )
                 }
             }
