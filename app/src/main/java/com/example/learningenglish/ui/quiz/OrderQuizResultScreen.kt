@@ -95,6 +95,9 @@ fun OrderQuizResultScreen(
                 ) {
                     items(feedbackOriginal.size) { i ->
                         val isCorrect = feedbackOriginal[i] == feedbackUser.getOrNull(i)
+                        val bgColor = if (isCorrect) Color(0xFFE0F7FA) else Color(0xFFFFEBEE)
+                        val indicator = if (isCorrect) "⭕" else "❌"
+
 
                         Card(
                             modifier = Modifier
@@ -103,25 +106,23 @@ fun OrderQuizResultScreen(
                             shape = RoundedCornerShape(16.dp),
                             elevation = CardDefaults.cardElevation(4.dp),
                             colors = CardDefaults.cardColors(
-                                containerColor = MaterialTheme.colorScheme.surfaceVariant
+                                containerColor = bgColor
                             )
                         ) {
-                            Box(modifier = Modifier.padding(16.dp)) {
-                                Column {
-                                    Text("정답", style = MaterialTheme.typography.labelSmall)
-                                    Text(feedbackOriginal[i])
-                                    Spacer(Modifier.height(8.dp))
-                                    Text("내 답", style = MaterialTheme.typography.labelSmall)
-                                    Text(feedbackUser.getOrNull(i) ?: "미응답")
-                                }
-
+                            Row(
+                                modifier = Modifier.padding(16.dp),
+                                verticalAlignment = Alignment.Top
+                            ) {
                                 Text(
-                                    text = if (isCorrect) "⭕" else "❌",
+                                    text = indicator,
                                     color = Color.Red,
-                                    modifier = Modifier
-                                        .align(Alignment.TopStart)
-                                        .padding(top = 2.dp, start = 2.dp)
+                                    modifier = Modifier.padding(end = 12.dp)
                                 )
+                                Column {
+                                    Text("정답: ${feedbackOriginal[i]}", style = MaterialTheme.typography.bodyMedium)
+                                    Spacer(Modifier.height(4.dp))
+                                    Text("내 답: ${feedbackUser.getOrNull(i) ?: "미응답"}", style = MaterialTheme.typography.bodyMedium)
+                                }
                             }
                         }
                     }
@@ -129,24 +130,26 @@ fun OrderQuizResultScreen(
 
                 Spacer(Modifier.height(16.dp))
 
-                Button(
-                    onClick = {
-                        navController.navigate("quiz_history/$userId/$contentType/$contentId?latestQuizId=$quizId")
-                    },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("복습하기")
-                }
+                Row(modifier = Modifier.fillMaxWidth()) {
+                    Button(
+                        onClick = {
+                            navController.navigate("quiz_history/$userId/$contentType/$contentId?latestQuizId=$quizId")
+                        },
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text("복습하기")
+                    }
 
-                Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
 
-                Button(
-                    onClick = {
-                        navController.navigate("order_quiz/$userId/$contentType/$contentId")
-                    },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("다음 문제로")
+                    Button(
+                        onClick = {
+                            navController.navigate("summaOrders_quiz/$userId/$contentType/$contentId")
+                        },
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text("다음 문제로")
+                    }
                 }
             }
         }

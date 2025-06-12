@@ -1,5 +1,6 @@
 package com.example.learningenglish.ui.home
 
+import android.widget.Toast
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -39,6 +40,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -59,6 +61,15 @@ import com.example.learningenglish.viewmodel.LearningViewModel
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
+
+import com.google.accompanist.pager.HorizontalPager
+import com.google.accompanist.pager.HorizontalPagerIndicator
+import com.google.accompanist.pager.rememberPagerState
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import kotlinx.coroutines.launch
 
 
 @Composable
@@ -116,6 +127,143 @@ fun StartLearningButton(onClick: () -> Unit) {
         }
     }
 }
+
+@Composable
+fun SwipableLearningCards(
+    recentTitle: String?,
+    recentType: String?,
+    recentContentId: Int?,
+    userId: Int,
+    todayWord: String?,
+    navController: NavController
+) {
+    val pagerState = rememberPagerState()
+    val coroutineScope = rememberCoroutineScope()
+    val context = LocalContext.current
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        HorizontalPager(count = 2, state = pagerState) { page ->
+            when (page) {
+                0 -> LearningCard(
+                    title = "최근 학습",
+                    subtitle = recentTitle ?: "내역 없음",
+                    imageRes = R.drawable.recent_learning,
+                    buttonText = "이어 하기",
+                    onClick = {
+                        if (recentContentId != null && recentType != null) {
+                            when (recentType) {
+                                "video" -> navController.navigate("videodetail/video/$recentContentId")
+                                "text" -> navController.navigate("textdetail/text/$recentContentId")
+                                else -> Toast.makeText(context, "지원하지 않는 콘텐츠 유형입니다", Toast.LENGTH_SHORT).show()
+                            }
+                        } else {
+                            Toast.makeText(context, "최근 학습 정보가 없습니다", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                )
+                1 -> LearningCard(
+                    title = "오늘의 단어",
+                    subtitle = todayWord ?: "등록된 단어 없음",
+                    imageRes = R.drawable.todays_word,
+                    buttonText = "학습 하기",
+                    onClick = {
+                        navController.navigate("uservocab/${userId}")
+                    }
+                )
+            }
+        }
+        Spacer(modifier = Modifier.height(8.dp))
+        HorizontalPagerIndicator(
+            pagerState = pagerState,
+            activeColor = Color(0xFF7C4DFF),
+            inactiveColor = Color.LightGray
+        )
+    }
+}
+
+@Composable
+fun LearningCard(
+    title: String,
+    subtitle: String,
+    imageRes: Int,
+    buttonText: String,
+    onClick: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(400.dp),
+        shape = RoundedCornerShape(16.dp),
+        elevation = CardDefaults.cardElevation(8.dp)
+    ) {
+        Box {
+            Image(
+                painter = painterResource(id = imageRes),
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize()
+            )
+
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp)
+            ) {
+                // 상단 제목/서브타이틀
+                Column (
+                    modifier = Modifier
+                        .background(Color.White.copy(alpha = 0.6f), shape = RoundedCornerShape(12.dp))
+                        .padding(horizontal = 12.dp, vertical = 8.dp)
+                ) {
+                    Text(
+                        text = title,
+                        color = Color.Black,
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+                    )
+                    Text(
+                        text = subtitle,
+                        color = Color.DarkGray,
+                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                        modifier = Modifier.padding(top = 4.dp)
+                    )
+                }
+
+                Spacer(modifier = Modifier.weight(1f)) // 버튼 하단 정렬
+
+                // 하단 버튼
+                Row(
+                    modifier = Modifier.fillMaxWidth()
+                        .background(Color.White.copy(alpha = 0.6f),
+                            shape = RoundedCornerShape(12.dp))
+                        .padding(horizontal = 8.dp, vertical = 4.dp),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    Button(
+                        onClick = onClick,
+                        shape = RoundedCornerShape(20.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color.White.copy(alpha = 0.9f)),
+                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                        elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp)
+                    ) {
+                        Text(buttonText, color = Color.Black, fontWeight = FontWeight.SemiBold)
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_arrow_right),
+                            contentDescription = null,
+                            tint = Color.Black
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
 
 
 
@@ -179,67 +327,6 @@ fun StartLearningButton(onClick: () -> Unit) {
         }
     }
 
-    @Composable
-    fun TodayRecommendationCard(onClick: () -> Unit) {
-        Box(modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 12.dp)
-        ) {
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 12.dp),
-            shape = RoundedCornerShape(16.dp),
-            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-        ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Text("오늘의 추천", style = MaterialTheme.typography.titleMedium)
-                Spacer(modifier = Modifier.height(8.dp))
-                Text("3문장 일상 영어 회화", fontWeight = FontWeight.Bold)
-                Spacer(modifier = Modifier.height(4.dp))
-                Button(onClick = onClick) {
-                    Text("바로가기")
-                }
-            }
-        }
-            Box(
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .offset(x = (-8).dp, y = 8.dp)  // 위치 조절
-                    .background(Color(0xFFD7CCC8), RoundedCornerShape(8.dp))
-                    .padding(horizontal = 8.dp, vertical = 4.dp)
-            ) {
-                Button(onClick = onClick) {
-                    Text("바로가기",style = MaterialTheme.typography.labelSmall)
-                }
-            }
-    }
-}
-
-    @Composable
-    fun LearningStatsCard(
-        studyCount: Int = 4,
-        totalMinutes: Int = 85,
-        averageScore: Int = 87
-    ) {
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 12.dp),
-            shape = RoundedCornerShape(16.dp),
-            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-        ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Text("나의 학습 현황", style = MaterialTheme.typography.titleMedium)
-                Spacer(modifier = Modifier.height(8.dp))
-                Text("📅 이번 주 학습 ${studyCount}회")
-                val hours = totalMinutes / 60
-                val minutes = totalMinutes % 60
-                Text("⏱️ 누적 시간 ${hours}시간 ${minutes}분")
-                Text("📈 평균 점수 ${averageScore}점")
-            }
-        }
-    }
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -247,20 +334,26 @@ fun StartLearningButton(onClick: () -> Unit) {
 fun HomeScreen(
     navController: NavController,
     viewModel: AuthViewModel,
+    userId: Int,
     learningViewModel: LearningViewModel
 ) {
-    var showGoalDialog by remember { mutableStateOf(false) }
+
     var showLearningTypeDialog by remember { mutableStateOf(false) }
     var selectedLearningType by remember { mutableStateOf("") }
-    var goalHours by remember { mutableStateOf(0) }
-    var goalMinutes by remember { mutableStateOf(0) }
-    var elapsedTimeInMinutes by remember { mutableStateOf(0) }
     var showDialog by remember { mutableStateOf(false) }
 
     val userName by viewModel.userName.collectAsState()
     val todayChecked by learningViewModel.todayChecked.collectAsState()
     val checkedDates by learningViewModel.checkedDates.collectAsState()
     val consecutiveDays by learningViewModel.consecutiveDays.collectAsState()
+
+    val purpleColor = Color(0xFF7C4DFF)
+    val lightPurple = Color(0xFFF6F3FF)
+    val darkPurple = Color(0xFF4A3AFF)
+
+    var recentTitle by remember { mutableStateOf<String?>(null) }
+    var recentType by remember { mutableStateOf<String?>(null) }
+    var recentContentId by remember { mutableStateOf<Int?>(null) }
 
     val items = listOf(
         BottomNavItem.Home,
@@ -280,14 +373,36 @@ fun HomeScreen(
     )
 
     var greetingMessage by remember { mutableStateOf("") }
+    val context = LocalContext.current
+
+    val vocabList by learningViewModel.pagedUserVocab.collectAsState()
+    var page by remember { mutableStateOf(0) }
 
     LaunchedEffect(Unit) {
         viewModel.loadUserDisplayName()
         greetingMessage = encouragementMessages.random()
+        learningViewModel.initializeAttendance()
+    }
+
+    LaunchedEffect(Unit) {
+        learningViewModel.initRepository(context)
+          // 꼭 필요
+    }
+
+    LaunchedEffect(userId) {
+        learningViewModel.loadRecentLearning(userId) { title, type, id ->
+            recentTitle = title
+            recentType = type
+            recentContentId = id
+        }
+    }
+
+    LaunchedEffect(userId) {
+        learningViewModel.loadUserVocab(userId) // 직접 호출 필요
     }
 
     Scaffold(
-        containerColor = Color(0xFFFFFAF0),
+        containerColor = lightPurple,
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         topBar = {
             TopAppBar(
@@ -321,7 +436,7 @@ fun HomeScreen(
                 actions = {
                     IconButton(onClick = { showDialog = true }) {
                         Icon(
-                            painter = painterResource(id = R.drawable.ic_logout), // 로그아웃 아이콘 (예: 문 출구 모양)
+                            painter = painterResource(id = R.drawable.ic_logout),
                             contentDescription = "로그아웃",
                             tint = Color.Black
                         )
@@ -362,9 +477,26 @@ fun HomeScreen(
             CustomBottomBar(navController, currentRoute)
         }
     ) { innerPadding ->
+        val today = LocalDate.now()
+        val seed = today.toEpochDay() + if (userId > 0) userId else 12345
+        val todayWord = remember(vocabList) {
+            derivedStateOf {
+                if (page == 0 && vocabList.isNotEmpty()) {
+                    val random = java.util.Random(seed)
+                    vocabList[random.nextInt(vocabList.size)].word
+                } else null
+            }
+        }
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .background(
+                    brush = Brush.verticalGradient(
+                        colors = listOf(Color(0xFFF6F3FF), Color.White),
+                        startY = 0f,
+                        endY = 1000f
+                    )
+                )
                 .padding(innerPadding)
                 .padding(16.dp)
                 .navigationBarsPadding()
@@ -396,11 +528,15 @@ fun HomeScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            TodayRecommendationCard(onClick = {
-                navController.navigate("library")
-            })
+            SwipableLearningCards(
+                recentTitle = recentTitle,
+                recentType = recentType,
+                recentContentId = recentContentId,
+                userId = userId,
+                todayWord = todayWord.value,
+                navController = navController,
+            )
 
-            LearningStatsCard()
 
             // 출석 달력 카드
             Card(
@@ -418,21 +554,6 @@ fun HomeScreen(
                     )
                 }
             }
-
-            /*
-            // 목표 설정 Dialog
-            if (showGoalDialog) {
-                GoalSettingDialog(
-                    onConfirm = { hours, minutes ->
-                        goalHours = hours
-                        goalMinutes = minutes
-                        showGoalDialog = false
-                        showLearningTypeDialog = true
-                    },
-                    onDismiss = { showGoalDialog = false }
-                )
-            }
-             */
 
 
             // 학습유형 선택 Dialog

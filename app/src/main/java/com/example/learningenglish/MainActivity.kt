@@ -37,7 +37,6 @@ import com.example.learningenglish.ui.auth.AuthManager
 import com.example.learningenglish.ui.auth.LoginScreen
 import com.example.learningenglish.ui.auth.SignUpScreen
 import com.example.learningenglish.ui.learning.dictation.DictationScreen
-import com.example.learningenglish.ui.grade.GradeTestHomeScreen
 import com.example.learningenglish.ui.home.FeatureSelectionScreen
 import com.example.learningenglish.ui.home.HomeScreen
 import com.example.learningenglish.ui.learning.DataLearning.DataLearningStartScreen
@@ -67,6 +66,7 @@ import androidx.navigation.NavHostController
 import com.example.learningenglish.data.repository.WordRepository
 import com.example.learningenglish.ui.auth.AttendancePreferencesDataStore
 import com.example.learningenglish.ui.auth.UserPreferencesDataStore
+import com.example.learningenglish.ui.home.HomeHomeScreen
 import com.example.learningenglish.ui.learning.DataLearning.main.TextDetailScreen
 import com.example.learningenglish.ui.learning.DataLearning.main.VideoDetailScreen
 import com.example.learningenglish.ui.learning.DataLearning.upload.OcrResultScreen
@@ -106,6 +106,7 @@ import com.google.android.gms.auth.api.signin.GoogleSignInClient
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.GoogleAuthProvider
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 
@@ -218,19 +219,40 @@ class MainActivity : ComponentActivity() {
                             }
                         )
                     }
-                    composable("home") {
+                    composable("home") { backStackEntry ->
+                        val context = LocalContext.current
+                        val authManager = remember { AuthManager(context) }
+                        val userPrefs = remember { UserPreferencesDataStore(context) }
+                        var userId by remember { mutableStateOf<Int?>(null) }
+                        LaunchedEffect(Unit) {
+                            userId = userPrefs.getUserId().first()
+                        }
+                        val AuthviewModel: AuthViewModel = viewModel(factory = AuthViewModelFactory(authManager, userPrefs))
+
+                        userId?.let { safeUserId ->
+                            HomeScreen(
+                                navController = navController,
+                                viewModel = AuthviewModel,
+                                userId = safeUserId,
+                                learningViewModel = viewModel
+                            )
+                        }
+                    }
+                    composable("homehome") {
                         val context = LocalContext.current
                         val authManager = remember { AuthManager(context) }
                         val userPrefs = remember { UserPreferencesDataStore(context) }
 
                         val AuthviewModel: AuthViewModel = viewModel(factory = AuthViewModelFactory(authManager, userPrefs))
 
-                        HomeScreen(
+                        HomeHomeScreen(
                             navController = navController,
                             viewModel = AuthviewModel,
                             learningViewModel = viewModel
                         )
                     }
+
+
 
                     composable("featureselection") {
                         FeatureSelectionScreen(navController = navController)
@@ -263,7 +285,7 @@ class MainActivity : ComponentActivity() {
                     composable("datalearningstart") {
                         DataLearningStartScreen(
                             onRegisterNewClick = { navController.navigate("uploadtypeselect") },
-                            onUseExistingClick = { navController.navigate("existing") },
+                            onUseExistingClick = { navController.navigate("library") },
                             navController = navController
                         )
                     }
@@ -382,10 +404,6 @@ class MainActivity : ComponentActivity() {
                         LibraryScreen(navController = navController, viewModel = viewModel)
                     }
 
-
-                    composable("grade") {
-                        GradeTestHomeScreen()
-                    }
 
                     composable(
                         route = "dictation_sentence_type/{contentsType}/{contentId}",

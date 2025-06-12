@@ -4,6 +4,9 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -52,7 +55,29 @@ fun MyTextLibraryScreen(
 
 
     Scaffold(topBar = {
-        TopAppBar(title = { Text("내가 등록한 텍스트") })
+        TopAppBar(
+            title = { Text("내가 등록한 텍스트") },
+            navigationIcon = {
+                IconButton(onClick = { navController.navigate("library") }) {
+                    Icon(
+                        imageVector = Icons.Default.ArrowBack,
+                        contentDescription = "뒤로가기"
+                    )
+                }
+            },
+            actions = {
+                IconButton(onClick = {
+                    navController.navigate("home") {
+                        popUpTo("home") { inclusive = true }
+                    }
+                }) {
+                    Icon(
+                        imageVector = Icons.Default.Close,
+                        contentDescription = "닫기"
+                    )
+                }
+            }
+        )
     }) { padding ->
         if (libraryItems.isEmpty()) {
             Box(

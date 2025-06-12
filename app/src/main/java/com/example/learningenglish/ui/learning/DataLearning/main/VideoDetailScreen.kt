@@ -65,6 +65,16 @@ fun VideoDetailScreen(
     val context = LocalContext.current
     val userPrefs = remember { UserPreferencesDataStore(context) }
     var userId by remember { mutableStateOf(0) }
+
+    val selectedVersionColors = ButtonDefaults.buttonColors(
+        containerColor = MaterialTheme.colorScheme.primary,
+        contentColor = Color.White
+    )
+
+    val unselectedVersionColors = ButtonDefaults.buttonColors(
+        containerColor = Color.Transparent,
+        contentColor = MaterialTheme.colorScheme.primary
+    )
     LaunchedEffect(Unit) {
         viewModel.initRepository(context.applicationContext)
     }
@@ -217,6 +227,12 @@ fun VideoDetailScreen(
                                             Toast.makeText(context, "라이브러리 ID 불러오기 실패", Toast.LENGTH_SHORT).show()
                                         }
                                     }
+                                    viewModel.saveRecentLearning(
+                                        userId = userId,
+                                        title = detail.title,
+                                        contentType = contentsType,
+                                        contentId = contentId
+                                    )
                                 }
                             }) {
                                 Icon(Icons.Default.Bookmark, contentDescription = "북마크")

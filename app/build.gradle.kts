@@ -35,7 +35,7 @@ android {
     }
 
     composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.14" // Compose 버전 (예시)
+        kotlinCompilerExtensionVersion = "1.5.14"
     }
 
     kotlinOptions {
@@ -99,4 +99,12 @@ dependencies {
     //implementation ("com.arthenica:ffmpeg-kit-full:6.0.LTS")
     implementation(files("libs/ffmpeg-kit-audio-6.0-2.aar"))
     implementation ("com.arthenica:smart-exception-java:0.2.1")
+
+    implementation("com.github.skydoves:landscapist-coil3:2.5.0")
+    //implementation("androidx.compose.foundation:foundation")
+    //implementation("androidx.compose.foundation:foundation-pager:0.30.1")
+    implementation("com.google.accompanist:accompanist-pager:0.30.1")
+    implementation("com.google.accompanist:accompanist-pager-indicators:0.30.1")
+
+
 }

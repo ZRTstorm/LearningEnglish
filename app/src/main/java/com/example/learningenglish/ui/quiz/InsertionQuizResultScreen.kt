@@ -89,6 +89,7 @@ fun InsertionResultScreen(
                             .padding(8.dp)
                             .fillMaxWidth(),
                         shape = RoundedCornerShape(16.dp),
+                        elevation = CardDefaults.cardElevation(4.dp),
                         colors = CardDefaults.cardColors(containerColor = bgColor)
                     ) {
                         Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.Top) {

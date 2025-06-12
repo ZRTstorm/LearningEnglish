@@ -137,6 +137,7 @@ fun MusicPlayerComponent(
             .fillMaxWidth()
             .padding(16.dp)
     ) {
+        /*
         IconButton(onClick = onPlayPauseToggle) {
             Icon(
                 imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
@@ -144,6 +145,8 @@ fun MusicPlayerComponent(
             )
         }
         Text(if (isPlaying) "재생 중..." else "일시 정지됨", style = MaterialTheme.typography.bodyMedium)
+
+         */
     }
 }
 
@@ -169,11 +172,22 @@ fun TextDetailScreen(
     val textDetail by viewModel.textDetail.collectAsState()
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
+    val userPrefs = remember { UserPreferencesDataStore(context) }
+    val userIdState = remember { mutableStateOf(0) }
+    val userId = userIdState.value
+
+    LaunchedEffect(Unit) {
+        viewModel.initRepository(context) // 무조건 가장 먼저 실행되도록
+        userIdState.value = userPrefs.getUserId().first() ?: 0
+        viewModel.loadUserVocab(userIdState.value)
+    }
 
     var subtitleMode by remember { mutableStateOf("BOTH") }
     var playbackSpeed by remember { mutableStateOf(1.0f) }
     var seekToMillis by remember { mutableStateOf<Float?>(null) }
     var highlightedMillis by remember { mutableStateOf<Long?>(null) }
+
+
 
     var selectedWord by remember { mutableStateOf("") }
     val wordInfo by viewModel.selectedWordInfo.collectAsState()
@@ -185,6 +199,8 @@ fun TextDetailScreen(
     var isPlaying by remember { mutableStateOf(false) }
     val mediaPlayer = remember { MediaPlayer() }
     var selectedFile by remember { mutableStateOf<File?>(null) }
+    var savedWords = remember { mutableStateListOf<String>() }
+    //val savedWords = viewModel.userVocab.collectAsState().value.map { it.word }
 
     val selectedVersionColors = ButtonDefaults.buttonColors(
         containerColor = MaterialTheme.colorScheme.primary,
@@ -201,13 +217,10 @@ fun TextDetailScreen(
 
     val difficultyRange by remember { mutableStateOf(1f..15f) }
 
-    val userPrefs = remember { UserPreferencesDataStore(context) }
-    var userId by remember { mutableStateOf(0) }
-    LaunchedEffect(Unit) {
-        userId = userPrefs.getUserId().first() ?: 0
+
+    LaunchedEffect(userId) {
+        viewModel.loadUserVocab(userId)
     }
-
-
     LaunchedEffect(contentId) {
         viewModel.loadTextDetail(contentId)
 
@@ -353,14 +366,22 @@ fun TextDetailScreen(
                             }
                         }
                         IconButton(onClick = {
-                            val progress = ((index + 1).toFloat() / sentences.size * 100).toInt()
                             scope.launch {
                                 viewModel.getLibraryId(userId, contentsType, contentId) { libraryId ->
                                     if (libraryId != null) {
+                                        val progress = ((index + 1).toFloat() / sentences.size * 100).toInt()
                                         viewModel.updateProgress(libraryId, progress.toFloat())
                                     } else {
                                         Toast.makeText(context, "라이브러리 ID 불러오기 실패", Toast.LENGTH_SHORT).show()
                                     }
+                                }
+                                textDetail?.let {
+                                    viewModel.saveRecentLearning(
+                                        userId = userId,
+                                        title = it.title,
+                                        contentType = contentsType,
+                                        contentId = contentId
+                                    )
                                 }
                             }
                         }) {
@@ -396,14 +417,19 @@ fun TextDetailScreen(
                 )
             }
 
-
             if (showWordDialog && selectedWord.isNotBlank()) {
                 WordDetailDialog(
                     word = selectedWord,
                     onClose = { showWordDialog = false },
                     onFavorite = {
                 //val uid = Firebase.auth.currentUser?.uid ?: return@WordDetailDialog  // 👉 이건 위에서 받아오도록 처리 필요 (아래 설명 참고)
-                        viewModel.addWordToUserVocab(selectedWord, userId)
+                        if (!savedWords.contains(selectedWord)) {
+                            viewModel.addWordToUserVocab(selectedWord, userId)
+                            savedWords.add(selectedWord)  // ✅ 저장된 단어로 기억
+                            Toast.makeText(context, "\"$selectedWord\" 등록 완료!", Toast.LENGTH_SHORT).show()
+                        } else {
+                            Toast.makeText(context, "이미 등록된 단어입니다.", Toast.LENGTH_SHORT).show()
+                        }
                     },
                     wordInfo = viewModel.selectedWordInfo.collectAsState().value
                 )
@@ -467,26 +493,27 @@ fun FloatingBadge(
         }
 
     // 예 / 아니오 다이얼로그
-    if (showConfirmDialog) {
-        AlertDialog(
-            onDismissRequest = { showConfirmDialog = false },
-            title = { Text("이동하시겠습니까?") },
-            confirmButton = {
-                TextButton(onClick = {
-                    showConfirmDialog = false
-                    navController.navigate("similar_content/$contentType/$contentId")
-                }) {
-                    Text("예")
+        if (showConfirmDialog) {
+            AlertDialog(
+                onDismissRequest = { showConfirmDialog = false },
+                title = { Text("이동하시겠습니까?") },
+                confirmButton = {
+                    TextButton(onClick = {
+                        showConfirmDialog = false
+                        navController.navigate("similar_content/$contentType/$contentId")
+                    }) {
+                        Text("예")
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showConfirmDialog = false }) {
+                        Text("아니오")
+                    }
                 }
-            },
-            dismissButton = {
-                TextButton(onClick = { showConfirmDialog = false }) {
-                    Text("아니오")
-                }
-            }
-        )
+            )
+        }
+
     }
-}
 }
 
 

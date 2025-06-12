@@ -114,6 +114,23 @@ class LearningViewModel(
     private val _evalResult = MutableStateFlow<PronunciationEvalResponse?>(null)
     val evalResult: StateFlow<PronunciationEvalResponse?> = _evalResult
 
+    //최근 학습
+    fun saveRecentLearning(userId: Int, title: String, contentType: String, contentId: Int) {
+        viewModelScope.launch {
+            repository.saveRecentLearning(userId, title, contentType, contentId)
+        }
+    }
+    fun loadRecentLearning(userId: Int, onLoaded: (String?, String?, Int?) -> Unit) {
+        viewModelScope.launch {
+            repository.getRecentLearningFlow(userId).collect { (title, type, id) ->
+                onLoaded(title, type, id)
+            }
+        }
+    }
+    fun loadUserVocab(userId: Int) {
+        loadUserVocabPaged(userId, page = 0)
+    }
+
     //음성 파일 경로 저장용
     var lastPronunciationFilePaths by mutableStateOf<Map<String, String>>(emptyMap())
         private set
@@ -423,39 +440,6 @@ class LearningViewModel(
         }
     }
 
-    /*
-    fun searchTopicContents(
-        userId: Int,
-        topicText: String,
-        startLevel: Float,
-        endLevel: Float,
-        onResult: (List<Pair<String, Int>>) -> Unit,
-        onError: (Throwable) -> Unit
-    ) {
-        viewModelScope.launch {
-            try {
-                val response = api.searchByTopicText(
-                    userId = userId,
-                    start = startLevel,
-                    end = endLevel,
-                    option = "library",
-                    text = topicText
-                )
-                if (response.isSuccessful) {
-                    val result = response.body()  // [{"contentType": "video", "contentId": 5}, ...]
-                    //onResult(result ?: emptyList())
-                } else {
-                    onError(Exception("검색 실패: ${response.code()}"))
-                }
-            } catch (e: Exception) {
-                onError(e)
-            }
-        }
-    }
-
-     */
-
-
 
     // 필터링 및 정렬된 라이브러리 목록 업데이트
     private fun filterAndSortLibrary() {
@@ -731,6 +715,63 @@ class LearningViewModel(
     private val _todayChecked = MutableStateFlow(false)
     val todayChecked: StateFlow<Boolean> = _todayChecked
 
+    private val today: LocalDate
+        get() = LocalDate.now()
+
+    fun initializeAttendance() {
+        viewModelScope.launch {
+            val saved = loadCheckedDatesFromStorage() // ← 로컬에 저장된 출석 기록 불러오기
+            _checkedDates.value = saved
+            _todayChecked.value = saved.contains(today)
+            _consecutiveDays.value = calculateConsecutiveDays(saved)
+        }
+    }
+
+    fun checkAttendance() {
+        viewModelScope.launch {
+            if (!_checkedDates.value.contains(today)) {
+                val updated = _checkedDates.value + today
+                _checkedDates.value = updated
+                _todayChecked.value = true
+                _consecutiveDays.value = calculateConsecutiveDays(updated)
+
+                //saveCheckedDatesToStorage(updated) // ← 출석 날짜 저장
+                attendancePrefs.saveCheckedDates(updated)
+                attendancePrefs.saveTodayChecked(true)
+            }
+        }
+    }
+
+    private fun calculateConsecutiveDays(dates: List<LocalDate>): Int {
+        val sorted = dates.distinct().sortedDescending()
+        var count = 0
+        var day = today
+
+        for (date in sorted) {
+            if (date == day) {
+                count++
+                day = day.minusDays(1)
+            } else {
+                break
+            }
+        }
+
+        return count
+    }
+
+    // 임시 저장소
+    private suspend fun loadCheckedDatesFromStorage(): List<LocalDate> {
+        return attendancePrefs.getCheckedDates()
+    }
+
+    private suspend fun saveCheckedDatesToStorage(dates: List<LocalDate>) {
+        attendancePrefs.saveCheckedDates(dates)
+    }
+
+
+
+
+    /*
     init {
         loadAttendanceData()
     }
@@ -784,6 +825,8 @@ class LearningViewModel(
             attendancePrefs.saveTodayChecked(false)
         }
     }
+
+     */
 }
 
 

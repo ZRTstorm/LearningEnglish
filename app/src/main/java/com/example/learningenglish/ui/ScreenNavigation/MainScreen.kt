@@ -72,11 +72,14 @@ fun BottomBarScreen(navController: NavHostController) {
                     val userPrefs = remember { UserPreferencesDataStore(context) }
                     val AuthviewModel: AuthViewModel = viewModel(factory = AuthViewModelFactory(authManager, userPrefs))
 
+                    /*
                     HomeScreen(
                         navController = navController,
                         viewModel = AuthviewModel,
                         learningViewModel = viewModel
                     )
+
+                     */
                 }
                 composable("library") {
                     val viewModel: LearningViewModel = viewModel()  // viewModel 생성

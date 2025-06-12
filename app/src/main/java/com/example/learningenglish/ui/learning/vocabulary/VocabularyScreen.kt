@@ -174,7 +174,7 @@ fun WordCard(word: WordDetailResponse) {
         if (expanded) {
             word.phonetic?.let {
                 Text(
-                    text = "발음: $it",
+                    text = " $it",
                     style = MaterialTheme.typography.bodySmall,
                     color = Color.Gray,
                     modifier = Modifier.padding(vertical = 4.dp)
@@ -184,13 +184,14 @@ fun WordCard(word: WordDetailResponse) {
             word.definitions.forEach { def ->
                 Column(modifier = Modifier.padding(top = 8.dp)) {
                     Text(
-                        text = "의미: (${def.partOfSpeech}) ${def.definitionKo}",
+                        text = "${word.definitions.indexOf(def) + 1}. (${def.partOfSpeech}) ${def.definitionKo}",
+                        //text = "의미: (${def.partOfSpeech}) ${def.definitionKo}",
                         style = MaterialTheme.typography.bodyMedium,
                         color = Color.DarkGray
                     )
                     def.definitionEn?.let {
                         Text(
-                            text = "English: $it",
+                            text = " $it",
                             style = MaterialTheme.typography.bodySmall,
                             color = Color(0xFF5C6BC0),
                             modifier = Modifier.padding(start = 8.dp, top = 2.dp)
@@ -198,7 +199,7 @@ fun WordCard(word: WordDetailResponse) {
                     }
                     def.exampleKo?.let {
                         Text(
-                            text = "예문: $it",
+                            text = " $it",
                             style = MaterialTheme.typography.bodySmall,
                             color = Color(0xFF607D8B),
                             modifier = Modifier.padding(start = 8.dp, top = 2.dp)

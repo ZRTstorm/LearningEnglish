@@ -4,7 +4,12 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -76,7 +81,29 @@ fun MyVideoLibraryScreen(
 
 
     Scaffold(topBar = {
-        TopAppBar(title = { Text("내가 등록한 영상") })
+        TopAppBar(
+            title = { Text("내가 등록한 영상") },
+            navigationIcon = {
+                IconButton(onClick = { navController.navigate("library") }) {
+                    Icon(
+                        imageVector = Icons.Default.ArrowBack,
+                        contentDescription = "뒤로가기"
+                    )
+                }
+            },
+            actions = {
+                IconButton(onClick = {
+                    navController.navigate("home") {
+                        popUpTo("home") { inclusive = true }
+                    }
+                }) {
+                    Icon(
+                        imageVector = Icons.Default.Close,
+                        contentDescription = "닫기"
+                    )
+                }
+            }
+        )
     }) { padding ->
         if (libraryItems.isEmpty()) {
             Box(

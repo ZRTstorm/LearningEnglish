@@ -154,18 +154,44 @@ fun VideoLibraryCard(
             Spacer(modifier = Modifier.height(12.dp))
 
             // 하단 진행도 3개
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                ProgressBadge("받아쓰기", (content.writeScore?.toFloat() ?: 0f) / 100f)
-                ProgressBadge("발음 평가", (content.speechScore?.toFloat() ?: 0f) / 100f)
-                ProgressBadge("퀴즈", (content.quizScore?.toFloat() ?: 0f) / 100f)
-
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                ProgressBadge("받아쓰기", (content.writeScore?.toFloat() ?: 0f) / 100f, Color(0xFF7C4DFF))
+                ProgressBadge("발음 평가", (content.speechScore?.toFloat() ?: 0f) / 100f, Color(0xFF4CAF50))
+                ProgressBadge("퀴즈", (content.quizScore?.toFloat() ?: 0f) / 100f, Color(0xFFFF9800))
             }
         }
     }
 }
 
 @Composable
-fun ProgressBadge(label: String, progress: Float) {
+fun ProgressBadge(label: String, progress: Float, color: Color) {
+    val progress = (progress.coerceIn(0f, 1f))
+    val scoreText = String.format("%.1f점", progress * 100)
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 6.dp)
+    ) {
+        Text(text = label, style = MaterialTheme.typography.bodySmall)
+
+        LinearProgressIndicator(
+            progress = progress,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(10.dp)
+                .padding(top = 4.dp),
+            color = color,
+            trackColor = Color.LightGray.copy(alpha = 0.3f)
+        )
+
+        Text(
+            text = scoreText,
+            style = MaterialTheme.typography.labelSmall,
+            modifier = Modifier.align(Alignment.End)
+        )
+    }
+    /*
     val scoreText = String.format("%.1f", progress * 100) // 70.7처럼 표현
 
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -173,7 +199,17 @@ fun ProgressBadge(label: String, progress: Float) {
         Spacer(modifier = Modifier.height(4.dp))
         Text(text = "$label: 평균 ${scoreText}점", style = MaterialTheme.typography.labelSmall)
     }
+
+     */
 }
+
+
+
+
+
+
+
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

@@ -49,6 +49,8 @@ import okhttp3.RequestBody.Companion.asRequestBody
 import androidx.compose.ui.platform.LocalContext
 import com.example.learningenglish.data.model.ProgressUpdate
 import com.example.learningenglish.data.model.SummaContentResponse
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
 
 
 class LearningRepository {
@@ -78,6 +80,22 @@ class LearningRepository {
                 val percent = entry.value as? Int
                 if (id != null && percent != null) id to percent else null
             }.toMap()
+    }
+
+    suspend fun saveRecentLearning(userId: Int, title: String, contentType: String, contentId: Int) {
+        prefs.edit().apply {
+            putString("recent_title_$userId", title)
+            putString("recent_type_$userId", contentType)
+            putInt("recent_id_$userId", contentId)
+            apply()
+        }
+    }
+
+    fun getRecentLearningFlow(userId: Int): Flow<Triple<String?, String?, Int?>> = flow {
+        val title = prefs.getString("recent_title_$userId", null)
+        val type = prefs.getString("recent_type_$userId", null)
+        val id = prefs.getInt("recent_id_$userId", -1).takeIf { it != -1 }
+        emit(Triple(title, type, id))
     }
 
 
