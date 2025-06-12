@@ -19,6 +19,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
@@ -84,10 +85,10 @@ fun DictationResultScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("채점 결과") },
-                navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "뒤로가기")
+                title = { Text("받아쓰기 평가 결과") },
+                actions = {
+                    IconButton(onClick = { navController.navigate("library") }) {
+                        Icon(Icons.Default.Close, contentDescription = "닫기")
                     }
                 }
             )

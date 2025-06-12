@@ -30,6 +30,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 
@@ -60,8 +61,13 @@ fun LibraryScreen(
             TopAppBar(
                 title = { Text("내 라이브러리") },
                 navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
+                    IconButton(onClick = { navController.navigate("home") }) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "뒤로가기")
+                    }
+                },
+                actions = {
+                    IconButton(onClick = { navController.navigate("home") }) {
+                        Icon(Icons.Default.Close, contentDescription = "home")
                     }
                 }
             )
@@ -149,9 +155,10 @@ fun VideoLibraryCard(
 
             // 하단 진행도 3개
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                ProgressBadge("받아쓰기", 0.7f)
-                ProgressBadge("발음 평가", 0.3f)
-                ProgressBadge("퀴즈", 0.5f)
+                ProgressBadge("받아쓰기", (content.writeScore?.toFloat() ?: 0f) / 100f)
+                ProgressBadge("발음 평가", (content.speechScore?.toFloat() ?: 0f) / 100f)
+                ProgressBadge("퀴즈", (content.quizScore?.toFloat() ?: 0f) / 100f)
+
             }
         }
     }
@@ -159,10 +166,12 @@ fun VideoLibraryCard(
 
 @Composable
 fun ProgressBadge(label: String, progress: Float) {
+    val scoreText = String.format("%.1f", progress * 100) // 70.7처럼 표현
+
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         LinearProgressIndicator(progress = progress, modifier = Modifier.width(80.dp))
         Spacer(modifier = Modifier.height(4.dp))
-        Text(text = label, style = MaterialTheme.typography.labelSmall)
+        Text(text = "$label: 평균 ${scoreText}점", style = MaterialTheme.typography.labelSmall)
     }
 }
 

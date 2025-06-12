@@ -24,6 +24,7 @@ import com.example.learningenglish.data.model.OcrUploadRequest
 import com.example.learningenglish.data.model.OrderFeedbackResponse
 import com.example.learningenglish.data.model.OrderQuizData
 import com.example.learningenglish.data.model.OrderQuizRetryResponse
+import com.example.learningenglish.data.model.ProgressUpdate
 import com.example.learningenglish.data.model.PronunciationEvalResponse
 import com.example.learningenglish.data.model.PronunciationHistoryItem
 //import com.example.learningenglish.data.model.PronunciationResultResponse
@@ -149,6 +150,30 @@ class LearningViewModel(
             }
         }
     }
+
+    //진행도 업데이트
+    private val _progressUpdate = mutableStateOf<ProgressUpdate?>(null)
+    val progressUpdate: State<ProgressUpdate?> = _progressUpdate
+
+    fun updateProgress(libraryId: Int, progress: Float) {
+        viewModelScope.launch {
+            val result = repository.updateLibraryProgress(libraryId, progress)
+            _progressUpdate.value = result
+        }
+    }
+
+    fun getLibraryId(userId: Int, contentType: String, contentId: Int, onResult: (Int?) -> Unit) {
+        viewModelScope.launch {
+            try {
+                val id = repository.getLibraryId(userId, contentType, contentId)
+                onResult(id)
+            } catch (e: Exception) {
+                e.printStackTrace()
+                onResult(null)
+            }
+        }
+    }
+
 
 
     fun setEvalSentence(sentence: String) {
@@ -431,18 +456,6 @@ class LearningViewModel(
      */
 
 
-
-    // 정렬 옵션 변경
-    fun setSortOption(option: SortOption) {
-        _sortOption.value = option
-        filterAndSortLibrary()  // 정렬 변경 시 필터링 및 정렬 실행
-    }
-
-    // 필터 옵션 변경
-    fun setFilterOption(option: FilterOption) {
-        _filterOption.value = option
-        filterAndSortLibrary()  // 필터링 옵션 변경 시 필터링 및 정렬 실행
-    }
 
     // 필터링 및 정렬된 라이브러리 목록 업데이트
     private fun filterAndSortLibrary() {

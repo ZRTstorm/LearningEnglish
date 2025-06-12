@@ -20,6 +20,7 @@ import com.example.learningenglish.viewmodel.LearningViewModel
 import com.example.learningenglish.data.model.UserLibraryContent
 import com.example.learningenglish.ui.auth.UserPreferencesDataStore
 import kotlinx.coroutines.flow.collectLatest
+import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -63,9 +64,9 @@ fun MyTextLibraryScreen(
         } else {
             LazyColumn(contentPadding = padding) {
             items(myTextContents) { content ->
-                // TODO: Replace with actual percent
-                val dummyPercent = (10..90).random()
-                VideoLibraryCard(content, dummyPercent) {
+                val percent = content.progress.roundToInt()
+                //val dummyPercent = (10..90).random()
+                VideoLibraryCard(content, percent) {
                     navController.navigate("select_mode/text/${content.contentId}")
                 }
             }

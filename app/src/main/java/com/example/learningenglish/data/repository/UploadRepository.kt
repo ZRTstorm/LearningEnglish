@@ -47,6 +47,7 @@ import com.example.learningenglish.data.model.QuizHistoryItem
 import okhttp3.RequestBody
 import okhttp3.RequestBody.Companion.asRequestBody
 import androidx.compose.ui.platform.LocalContext
+import com.example.learningenglish.data.model.ProgressUpdate
 import com.example.learningenglish.data.model.SummaContentResponse
 
 
@@ -109,7 +110,21 @@ class LearningRepository {
         } else {
             emptyList()
         }
+    }
 
+    //진행도 업데이트
+    suspend fun updateLibraryProgress(libraryId: Int, progress: Float): ProgressUpdate? {
+        return try {
+            val response = api.updateProgress(libraryId, progress)
+            if (response.isSuccessful) {
+                response.body()
+            } else {
+                null // or throw Exception
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
     }
 
     //퀴즈 insert
@@ -381,7 +396,8 @@ class LearningRepository {
         contentsLibraryId: Int,
         audioFile: File
     ): PronunciationEvalResponse {
-        val requestFile = RequestBody.create("audio/mpeg".toMediaTypeOrNull(), audioFile)
+        val requestFile = RequestBody.create("audio/wav".toMediaTypeOrNull(), audioFile)
+        //val requestFile = RequestBody.create("audio/mpeg".toMediaTypeOrNull(), audioFile)
         val audioPart = MultipartBody.Part.createFormData("audio", audioFile.name, requestFile)
 
         val response = api.evaluatePronunciationAudio(

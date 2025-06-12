@@ -21,6 +21,7 @@ import com.example.learningenglish.data.model.WordInfo
 import com.example.learningenglish.data.model.OcrUploadRequest
 import com.example.learningenglish.data.model.OrderFeedbackResponse
 import com.example.learningenglish.data.model.OrderSentence
+import com.example.learningenglish.data.model.ProgressUpdate
 import com.example.learningenglish.data.model.PronunciationEvalResponse
 import com.example.learningenglish.data.model.PronunciationHistoryItem
 //import com.example.learningenglish.data.model.PronunciationResultResponse
@@ -169,6 +170,13 @@ interface ApiService {
         @Path("contentId") contentId: Int
     ): List<OrderSentence>
 
+
+    //진행도 업데이트
+    @GET("/api/audio/library/progress/{libraryId}")
+    suspend fun updateProgress(
+        @Path("libraryId") libraryId: Int,
+        @Query("progress") progress: Float
+    ): Response<ProgressUpdate>
 
     @GET("quiz/feedback/insertion/{quizId}")
     suspend fun getInsertionFeedback(@Path("quizId") quizId: Int): InsertionFeedbackResponse

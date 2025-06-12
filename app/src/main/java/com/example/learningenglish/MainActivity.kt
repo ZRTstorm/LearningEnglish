@@ -652,7 +652,7 @@ class MainActivity : ComponentActivity() {
                     }
 
                     // 배열 퀴즈 화면
-                    composable("order_quiz/{userId}/{contentType}/{contentId}") { backStackEntry ->
+                    composable("summaOrders_quiz/{userId}/{contentType}/{contentId}") { backStackEntry ->
                         val userId = backStackEntry.arguments?.getString("userId")?.toIntOrNull() ?: return@composable
                         val contentType = backStackEntry.arguments?.getString("contentType") ?: return@composable
                         val contentId = backStackEntry.arguments?.getString("contentId")?.toIntOrNull() ?: return@composable
@@ -666,7 +666,7 @@ class MainActivity : ComponentActivity() {
                         )
                     }
                     composable(
-                        "order_result/{userId}/{contentType}/{contentId}/{quizId}",
+                        "summaOrders_result/{userId}/{contentType}/{contentId}/{quizId}",
                         arguments = listOf(
                             navArgument("userId") { type = NavType.IntType },
                             navArgument("contentType") { type = NavType.StringType },
@@ -784,7 +784,7 @@ class MainActivity : ComponentActivity() {
                         //val uid = backStackEntry.arguments?.getString("uid") ?: return@composable
                         val viewModel: LearningViewModel = viewModel(factory = LearningViewModelFactory(repository, repositoryW, attendancePrefs ))
 
-                        VocabScreen(viewModel = viewModel, userId = userId)
+                        VocabScreen(viewModel = viewModel, navController = navController, userId = userId)
                     }
 
                     composable("main") {

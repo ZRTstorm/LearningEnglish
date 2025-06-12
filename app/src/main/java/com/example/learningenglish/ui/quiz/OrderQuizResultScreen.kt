@@ -5,6 +5,8 @@ import android.widget.Toast
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -16,6 +18,7 @@ import androidx.navigation.NavController
 import com.example.learningenglish.viewmodel.LearningViewModel
 import kotlinx.coroutines.launch
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun OrderQuizResultScreen(
     navController: NavController,
@@ -47,7 +50,18 @@ fun OrderQuizResultScreen(
         }
     }
 
-    Scaffold { padding ->
+    Scaffold (
+        topBar = {
+            TopAppBar(
+                title = { Text("배열 퀴즈 결과") },
+                actions = {
+                    IconButton(onClick = { navController.navigate("library") }) {
+                        Icon(Icons.Default.Close, contentDescription = "닫기")
+                    }
+                }
+            )
+        }
+    ) { padding ->
         if (!isLoaded) {
             Box(
                 modifier = Modifier

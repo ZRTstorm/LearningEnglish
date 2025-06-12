@@ -9,6 +9,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
@@ -39,6 +40,10 @@ fun PronunciationResultScreen(
     var mediaPlayer = remember { MediaPlayer() }
     var selectedVoice by remember { mutableStateOf("US") }
     var expandedMetric by remember { mutableStateOf<String?>(null) }
+    val snackbarHostState = remember { SnackbarHostState() }
+    LaunchedEffect(Unit) {
+        snackbarHostState.showSnackbar("✅ 발음 평가가 완료되었어요!")
+    }
 
     DisposableEffect(Unit) {
         onDispose {
@@ -48,8 +53,16 @@ fun PronunciationResultScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(title = { Text("평가 결과") })
-        }
+            TopAppBar(
+                title = { Text("발음 평가 결과") },
+                actions = {
+                    IconButton(onClick = { navController.navigate("library") }) {
+                        Icon(Icons.Default.Close, contentDescription = "닫기")
+                    }
+                }
+            )
+        },
+        snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
     ) { padding ->
         Column(
             modifier = Modifier

@@ -3,6 +3,7 @@ package com.example.learningenglish.ui.learning.DataLearning.main
 import android.net.Uri
 import android.webkit.JavascriptInterface
 import android.webkit.WebView
+import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -34,6 +35,7 @@ import androidx.compose.animation.expandIn
 import androidx.compose.animation.shrinkOut
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.filled.Bookmark
+import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
 
@@ -197,67 +199,26 @@ fun VideoDetailScreen(
                                     }
                                 }
                             }
+                            val scope = rememberCoroutineScope()
 
                             // 북마크 버튼 추가: 이 문장이 몇 번째인지 기반으로 진도율 계산
                             IconButton(onClick = {
                                 val progress = ((index + 1).toFloat() / detail.sentences.size * 100).roundToInt()
-                                viewModel.setProgressForContent(contentId, progress)
+
+                                scope.launch {
+                                    viewModel.getLibraryId(userId, contentsType, contentId) { libraryId ->
+                                        if (libraryId != null) {
+                                            viewModel.updateProgress(libraryId, progress.toFloat())
+                                        } else {
+                                            Toast.makeText(context, "라이브러리 ID 불러오기 실패", Toast.LENGTH_SHORT).show()
+                                        }
+                                    }
+                                }
                             }) {
                                 Icon(Icons.Default.Bookmark, contentDescription = "북마크")
                             }
                         }
                     }
-
-
-                /*
-                LazyColumn(modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f)
-                    .padding(horizontal = 16.dp)) {
-                    items(detail.sentences.size) { index ->
-                        val segment = detail.sentences[index]
-                        val displayText = when (subtitleMode) {
-                            "EN_ONLY" -> segment.originalText
-                            "BOTH" -> "${segment.originalText}\n${segment.translatedText}"
-                            else -> segment.originalText
-                        }
-
-                        val isHighlighted = segment.startTimeMillis == highlightedMillis
-
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .background(if (isHighlighted) Color(0xFFE3F2FD) else Color.Transparent)
-                                .clickable {
-                                    seekToMillis = segment.startTimeMillis.toFloat() + 500
-                                    highlightedMillis = segment.startTimeMillis
-                                }
-                                .padding(vertical = 8.dp)
-                        ) {
-                            when (subtitleMode) {
-                                "EN_ONLY" -> {
-                                    ClickableWordText(sentence = segment.originalText) { word ->
-                                        selectedWord = word
-                                        viewModel.loadWordDetail(word)
-                                        showWordDialog = true
-                                    }
-                                }
-                                "BOTH" -> {
-                                    ClickableWordText(sentence = segment.originalText) { word ->
-                                        selectedWord = word
-                                        viewModel.loadWordDetail(word)
-                                        showWordDialog = true
-                                    }
-                                    Spacer(Modifier.height(4.dp))
-                                    Text(text = segment.translatedText)
-                                }
-                                else -> {
-                                    Text(text = segment.originalText)
-                                }
-                            }
-                        }*/
-
-
                 }
             }
             FloatingBadge(

@@ -147,6 +147,13 @@ data class TextDetailResponse(
     val words: List<WordInfo>? // null 허용
 )
 
+//진행도 업데이트
+data class ProgressUpdate(
+    val libraryId: Int,
+    val progress: Float
+)
+
+
 data class TextFile(
     val filePath: String,
     val sentences: List<Sentence>

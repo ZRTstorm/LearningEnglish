@@ -21,6 +21,7 @@ import androidx.navigation.NavController
 import com.example.learningenglish.ui.auth.UserPreferencesDataStore
 import com.example.learningenglish.viewmodel.LearningViewModel
 import kotlinx.coroutines.flow.collectLatest
+import kotlin.math.roundToInt
 
 // MyVideoLibraryScreen.kt
 @OptIn(ExperimentalMaterial3Api::class)
@@ -87,7 +88,7 @@ fun MyVideoLibraryScreen(
         } else {
             LazyColumn(contentPadding = padding) {
                 items(myVideoContents) { content ->
-                    val percent = progressMap[content.contentId] ?: 0
+                    val percent = content.progress.roundToInt()
                     //val dummyPercent = (10..90).random()
                     VideoLibraryCard(content, percent) {
                         navController.navigate("select_mode2/video/${content.contentId}")

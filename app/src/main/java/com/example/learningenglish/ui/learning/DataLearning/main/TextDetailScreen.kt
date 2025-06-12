@@ -42,6 +42,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.expandIn
 import androidx.compose.animation.shrinkOut
+import androidx.compose.material.icons.filled.Bookmark
 
 
 @Composable
@@ -51,6 +52,8 @@ fun Mp3PlayerComponent(
 ) {
     val context = LocalContext.current
     val mediaPlayer = remember { MediaPlayer() }
+    val scope = rememberCoroutineScope()
+
 
     LaunchedEffect(file.absolutePath) {
         try {
@@ -313,69 +316,82 @@ fun TextDetailScreen(
                 items(sentences.size) { index ->
                     val segment = sentences[index]
                     val isHighlighted = segment.startTimeMillis == highlightedMillis
+                    val scope = rememberCoroutineScope()
 
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .background(if (isHighlighted) Color(0xFFE3F2FD) else Color.Transparent)
-                            .clickable {
-                                seekToMillis = segment.startTimeMillis.toFloat() + 500
-                                highlightedMillis = segment.startTimeMillis
-                            }
-                            .padding(vertical = 8.dp)
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth()
                     ) {
-                        when (subtitleMode) {
-                            "EN_ONLY" -> {
-                                ClickableWordText(sentence = segment.originalText) { word ->
-                                    selectedWord = word
-                                    viewModel.loadWordDetail(word)
-                                    showWordDialog = true
+                        Column(
+                            modifier = Modifier
+                                .weight(1f)
+                                .background(if (isHighlighted) Color(0xFFE3F2FD) else Color.Transparent)
+                                .clickable {
+                                    seekToMillis = segment.startTimeMillis.toFloat() + 500
+                                    highlightedMillis = segment.startTimeMillis
+                                }
+                                .padding(vertical = 8.dp)
+                        ) {
+                            when (subtitleMode) {
+                                "EN_ONLY" -> {
+                                    ClickableWordText(sentence = segment.originalText) { word ->
+                                        selectedWord = word
+                                        viewModel.loadWordDetail(word)
+                                        showWordDialog = true
+                                    }
+                                }
+                                "BOTH" -> {
+                                    ClickableWordText(sentence = segment.originalText) { word ->
+                                        selectedWord = word
+                                        viewModel.loadWordDetail(word)
+                                        showWordDialog = true
+                                    }
+                                    Spacer(Modifier.height(4.dp))
+                                    Text(text = segment.translatedText)
+                                }
+                                else -> Text(text = segment.originalText)
+                            }
+                        }
+                        IconButton(onClick = {
+                            val progress = ((index + 1).toFloat() / sentences.size * 100).toInt()
+                            scope.launch {
+                                viewModel.getLibraryId(userId, contentsType, contentId) { libraryId ->
+                                    if (libraryId != null) {
+                                        viewModel.updateProgress(libraryId, progress.toFloat())
+                                    } else {
+                                        Toast.makeText(context, "라이브러리 ID 불러오기 실패", Toast.LENGTH_SHORT).show()
+                                    }
                                 }
                             }
-                            "BOTH" -> {
-                                ClickableWordText(sentence = segment.originalText) { word ->
-                                    selectedWord = word
-                                    viewModel.loadWordDetail(word)
-                                    showWordDialog = true
-                                }
-                                Spacer(Modifier.height(4.dp))
-                                Text(text = segment.translatedText)
-                            }
-                            else -> Text(text = segment.originalText)
+                        }) {
+                            Icon(Icons.Default.Bookmark, contentDescription = "북마크")
                         }
                     }
                 }
             }
+
 
             // 팝업 UI
             if (showExitDialog) {
                 AlertDialog(
                     onDismissRequest = { showExitDialog = false },
                     title = { Text("학습을 종료하시겠습니까?") },
-                    text = { Text("학습을 종료하고 유사한 콘텐츠를 추천받거나 홈 화면으로 돌아갈 수 있습니다.") },
+                    text = { Text("학습을 종료하고 홈 화면으로 돌아갈 수 있습니다.") },
                     confirmButton = {
                         TextButton(onClick = {
                             showExitDialog = false
-
-                            navController.navigate("similar_content/$contentsType/$contentId")
+                            navController.navigate("home")
                         }) {
-                            Text("유사한 콘텐츠 학습하기")
+                            Text("홈으로")
                         }
                     },
                     dismissButton = {
-                        Row {
-                            TextButton(onClick = {
-                                showExitDialog = false
-                                navController.navigate("home")
-                            }) {
-                                Text("홈으로")
-                            }
-                            TextButton(onClick = {
-                                showExitDialog = false
-                            }) {
-                                Text("취소")
-                            }
+                        TextButton(onClick = {
+                            showExitDialog = false
+                        }) {
+                            Text("취소")
                         }
+
                     }
                 )
             }

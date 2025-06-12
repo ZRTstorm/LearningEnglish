@@ -73,7 +73,7 @@ fun CustomBottomBar(navController: NavController, currentRoute: String) {
                     .size(64.dp)
                     .shadow(6.dp, shape = CircleShape)
                     .background(color = Color(0xFF673AB7), shape = CircleShape)
-                    .clickable { navController.navigate("datalearningstart") },
+                    .clickable { navController.navigate("uploadtypeselect") },
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
@@ -90,7 +90,7 @@ fun CustomBottomBar(navController: NavController, currentRoute: String) {
             if (userId != null) {
                 BottomBarItem(
                     route = "uservocab/${userId}",
-                    icon = Icons.Filled.Search,
+                    icon = Icons.Filled.StickyNote2,
                     label = "단어장",
                     selected = currentRoute == "uservocab/${userId}"
                 ) {

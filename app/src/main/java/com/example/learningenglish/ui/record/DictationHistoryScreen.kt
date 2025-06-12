@@ -64,27 +64,27 @@ fun DictationHistoryScreen(
 
                             Text("문법 점수", style = MaterialTheme.typography.titleSmall)
                             LinearProgressIndicator(
-                                progress = (item.grammarScore.toFloat() / 100f).coerceIn(0f, 1f),
+                                progress = item.grammarScore.toFloat().coerceIn(0f, 1f),
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .height(8.dp)
                                     .padding(vertical = 4.dp),
                                 color = Color(0xFF6D9886)
                             )
-                            Text("${item.grammarScore.toInt()}점", style = MaterialTheme.typography.bodySmall)
+                            Text(String.format("%.1f점", item.grammarScore * 100), style = MaterialTheme.typography.bodySmall)
 
                             Spacer(modifier = Modifier.height(8.dp))
 
                             Text("유사도 점수", style = MaterialTheme.typography.titleSmall)
                             LinearProgressIndicator(
-                                progress = (item.similarityScore.toFloat() / 100f).coerceIn(0f, 1f),
+                                progress = item.similarityScore.toFloat().coerceIn(0f, 1f),
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .height(8.dp)
                                     .padding(vertical = 4.dp),
                                 color = Color(0xFF6D9886)
                             )
-                            Text("${item.similarityScore.toInt()}점", style = MaterialTheme.typography.bodySmall)
+                            Text(String.format("%.1f점", item.similarityScore * 100), style = MaterialTheme.typography.bodySmall)
 
                             if (item.feedback.isNotBlank()) {
                                 Spacer(modifier = Modifier.height(8.dp))

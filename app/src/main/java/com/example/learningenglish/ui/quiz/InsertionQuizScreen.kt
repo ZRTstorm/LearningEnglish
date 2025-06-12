@@ -72,6 +72,7 @@ fun InsertionQuizScreen(
     var selectedTarget by remember { mutableStateOf<Int?>(null) }
     var isChoiceExpanded by remember { mutableStateOf(false) }
     var isQuizLoaded by remember { mutableStateOf(false) }
+    var currentChoiceIndex by remember { mutableIntStateOf(0) }
 
     LaunchedEffect(true) {
         try {
@@ -108,12 +109,13 @@ fun InsertionQuizScreen(
                 if (insertIndices.contains(index)) {
                     val selectedIdx = userSelectedMap[index]
                     val text = insertionChoices.firstOrNull { it.first == selectedIdx }?.second ?: "(문장 선택)"
+                    val isSelected = selectedTarget == index
                     Button(
                         onClick = { selectedTarget = index },
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(4.dp)
-                            .border(1.dp, Color.Gray, RoundedCornerShape(6.dp))
+                            .border(2.dp, if (isSelected) Color.Blue else Color.Gray, RoundedCornerShape(6.dp))
                     ) {
                         Text(text)
                     }
@@ -123,6 +125,60 @@ fun InsertionQuizScreen(
             }
         }
 
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 12.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Button(
+                onClick = {
+                    currentChoiceIndex = (currentChoiceIndex - 1 + insertionChoices.size) % insertionChoices.size
+                },
+                modifier = Modifier.weight(1f)
+            ) {
+                Text("<")
+            }
+
+            Spacer(modifier = Modifier.width(8.dp))
+
+            val (idx, sentence) = insertionChoices[currentChoiceIndex]
+            val alreadyUsed = userSelectedMap.containsValue(idx)
+            val assignedKey = userSelectedMap.entries.find { it.value == idx }?.key
+            val isSelected = userSelectedMap.containsValue(idx)
+
+            Button(
+                onClick = {
+                    if (assignedKey != null) {
+                        userSelectedMap.remove(assignedKey)
+                    } else if (selectedTarget != null && !alreadyUsed) {
+                        userSelectedMap[selectedTarget!!] = idx
+                        selectedTarget = null
+                    }
+                },
+                modifier = Modifier
+                    .weight(4f)
+                    .heightIn(min = 60.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = if (isSelected) Color(0xFF6D9886) else Color(0xFFE0E0E0)
+                )
+            ) {
+                Text(sentence, color = Color.White)
+            }
+
+            Spacer(modifier = Modifier.width(8.dp))
+
+            Button(
+                onClick = {
+                    currentChoiceIndex = (currentChoiceIndex + 1) % insertionChoices.size
+                },
+                modifier = Modifier.weight(1f)
+            ) {
+                Text(">")
+            }
+        }
+        /*
         Column(modifier = Modifier
             .fillMaxWidth()
             .verticalScroll(rememberScrollState())) {
@@ -165,12 +221,18 @@ fun InsertionQuizScreen(
             }
         }
 
+         */
+
         Spacer(Modifier.height(12.dp))
 
         Button(
             onClick = {
-                val userAnswers = insertIndices.mapNotNull { userSelectedMap[it] }.toMutableList()
-                viewModel.userAnswers = selectedChoices.toMutableList()
+                val userAnswers = insertIndices.map { index ->
+                    userSelectedMap[index] ?: -1  // 선택 안 한 경우 -1로
+                }
+                //val userAnswers = insertIndices.mapNotNull { userSelectedMap[it] }.toMutableList()
+                viewModel.userAnswers = userAnswers.toMutableList()
+                //viewModel.userAnswers = selectedChoices.toMutableList()
                 viewModel.insertNumList = insertIndices.toMutableList()
 
                 scope.launch {

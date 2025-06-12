@@ -3,6 +3,8 @@ package com.example.learningenglish.ui.quiz
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -59,7 +61,14 @@ fun InsertionResultScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(title = { Text("삽입퀴즈결과") })
+            TopAppBar(
+                title = { Text("삽입 퀴즈 결과") },
+                actions = {
+                    IconButton(onClick = { navController.navigate("library") }) {
+                        Icon(Icons.Default.Close, contentDescription = "닫기")
+                    }
+                }
+            )
         }
     ) { padding ->
         Column(modifier = Modifier.padding(padding).fillMaxSize()) {

@@ -390,8 +390,9 @@ fun HomeScreen(
 
             // 학습하기 버튼
             StartLearningButton {
-                showLearningTypeDialog = true
+                navController.navigate("datalearningstart")
             }
+
 
             Spacer(modifier = Modifier.height(24.dp))
 
@@ -439,7 +440,7 @@ fun HomeScreen(
                 LearningTypeSelectionDialog(
                     onConfirm = { type ->
                         selectedLearningType = type
-                        navController.navigate("datalearningstart")
+                        navController.navigate("uploadtypeselect")
                         showLearningTypeDialog = false
                         coroutineScope.launch {
                             snackbarHostState.showSnackbar(

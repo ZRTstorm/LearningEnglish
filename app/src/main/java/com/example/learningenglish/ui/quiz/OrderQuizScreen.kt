@@ -14,6 +14,9 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -113,22 +116,47 @@ fun OrderQuizScreen(
 
             LazyColumn(modifier = Modifier.weight(1f)) {
                 items(shuffledOrder) { pair ->
+                    val isSelected = selectedOrder.contains(pair)
+
                     Button(
                         onClick = {
-                            if (!selectedOrder.contains(pair)) selectedOrder = selectedOrder + pair
+                            //if (!selectedOrder.contains(pair)) selectedOrder = selectedOrder + pair
+                            selectedOrder = if (isSelected) {
+                                selectedOrder.filterNot { it == pair } // 선택 해제
+                            } else {
+                                selectedOrder + pair // 선택 추가
+                            }
                         },
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(4.dp)
+                            .padding(4.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = if (isSelected) Color(0xFF6D9886) else Color(0xFFE0E0E0),
+                            contentColor = Color.Black
+                        )
                     ) {
                         Text(pair.second)
                     }
                 }
                 item {
                     Spacer(Modifier.height(8.dp))
-                    Text("선택한 순서")
+                    Text("선택한 순서", style = MaterialTheme.typography.titleMedium)
+                    Spacer(Modifier.height(4.dp))
+
                     selectedOrder.forEachIndexed { i, pair ->
-                        Text("${i + 1}. ${pair.second}", modifier = Modifier.padding(4.dp))
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 4.dp),
+                            shape = RoundedCornerShape(8.dp),
+                            colors = CardDefaults.cardColors(containerColor = Color(0xFFF1F1F1))
+                        ) {
+                            Text(
+                                text = "${i + 1}. ${pair.second}",
+                                modifier = Modifier.padding(12.dp),
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                        }
                     }
                 }
             }
