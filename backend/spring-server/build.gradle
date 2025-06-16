@@ -1,0 +1,56 @@
+plugins {
+	id 'java'
+	id 'org.springframework.boot' version '3.4.4'
+	id 'io.spring.dependency-management' version '1.1.7'
+}
+
+group = 'com.eng'
+version = '0.0.1-SNAPSHOT'
+
+java {
+	toolchain {
+		languageVersion = JavaLanguageVersion.of(17)
+	}
+}
+
+configurations {
+	compileOnly {
+		extendsFrom annotationProcessor
+	}
+}
+
+repositories {
+	mavenCentral()
+	maven { url 'https://repo.spring.io/milestone'}
+}
+
+dependencies {
+	implementation platform("org.springframework.ai:spring-ai-bom:1.0.0-M6")
+	implementation 'org.springframework.ai:spring-ai-openai-spring-boot-starter'
+	implementation 'com.google.protobuf:protobuf-java:3.25.5'
+	implementation 'org.springframework.ai:spring-ai-qdrant-store-spring-boot-starter'
+	implementation 'org.springframework.boot:spring-boot-starter-data-elasticsearch'
+	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+	implementation 'org.springframework.boot:spring-boot-starter-validation'
+	implementation 'org.springframework.boot:spring-boot-starter-web'
+	implementation 'com.google.firebase:firebase-admin:9.4.3'
+
+	compileOnly 'org.projectlombok:lombok'
+	runtimeOnly 'com.mysql:mysql-connector-j'
+	annotationProcessor 'org.projectlombok:lombok'
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+	implementation 'org.springframework.boot:spring-boot-starter-web'
+	implementation 'org.springframework.boot:spring-boot-starter-webflux'
+	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.2.0'
+	implementation 'org.apache.commons:commons-text:1.10.0'
+	implementation 'com.google.cloud:google-cloud-texttospeech:2.63.0'
+	implementation 'com.google.protobuf:protobuf-java:3.25.1'
+	implementation 'org.languagetool:language-en:5.9'
+	implementation group: 'com.microsoft.cognitiveservices.speech', name: 'client-sdk', version: "1.43.0", ext: "jar"
+	implementation 'commons-io:commons-io:2.13.0'
+}
+
+tasks.named('test') {
+	useJUnitPlatform()
+}

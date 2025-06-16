@@ -1,0 +1,21 @@
+# Python Cache
+__pycache__/
+*.py[cod]
+
+# Venv Env
+venv/
+venv
+.env
+
+#Audio file
+downloads/
+*.mp3
+*.wav
+
+# IDE file
+*.idea
+.vscode/
+
+# Another
+.DS_Store
+*.log

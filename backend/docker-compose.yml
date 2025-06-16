@@ -1,0 +1,19 @@
+services:
+  fastapi:
+    build:
+      context: ./python-ai
+    container_name: fastapi-app
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./python-ai/downloads:/app/downloads
+      - /home/ubuntu/my-app/www.youtube.com_cookies.txt:/app/www.youtube.com_cookies.txt
+    depends_on:
+      - spring-server
+
+  spring-server:
+    build:
+      context: ./spring-server
+    container_name: spring-app
+    ports:
+      - "8080:8080"

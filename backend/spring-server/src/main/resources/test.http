@@ -1,0 +1,6 @@
+POST http://localhost:8080/api/audio/process
+Content-Type: application/json
+
+{
+  "url": "https://www.youtube.com/watch?v=--zku6TB5NY"
+}
